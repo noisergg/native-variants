@@ -1,133 +1,439 @@
 ---
-title: Typescript
-description: Native Variants provides typing out of the box, but this page contains some further utilities and tips.
+title: TypeScript
+description: Full TypeScript support with type inference, utilities, and best practices.
 ---
 
-## Extract variants from a component
+Native Variants is built with TypeScript and provides excellent type inference out of the box.
 
-You can use the `VariantProps` utility to extract variants from a component.
+## Type Inference
+
+Variants, slots, and theme tokens are all automatically inferred.
 
 ```tsx
-import { nv } from 'native-variants'
+import { createNVA } from "native-variants";
 
-const buttonVariants = nv({
-    slots: ["root", "text"],
-    base: {
-      root: { paddingHorizontal: 16, paddingVertical: 12 },
-      text: { color: "#ffffff", textAlign: "center" },
-    },
-    variants: {
-      variant: {
-        solid: {
-          root: { backgroundColor: "#ff0006" },
-          text: { color: "#ffffff" },
-        },
-        ghost: {
-          root: { backgroundColor: "transparent" },
-          text: { color: "#ff0006" },
-        },
+const { styled, theme } = createNVA({
+  theme: {
+    colors: {
+      default: {
+        primary: "#3b82f6",
+        background: "#ffffff",
       },
-      size: {
-        sm: {
-          root: {
-            paddingHorizontal: 8,
-            paddingVertical: 12
-          }
-          text: {
-            fontSize: 14
-          }
-        },
-        md: {
-          root: {
-            paddingHorizontal: 12,
-            paddingVertical: 16
-          },
-           text: {
-            fontSize: 16
-          }
-        },
-      }
+      dark: {
+        primary: "#60a5fa",
+        background: "#0a0a0a",
+      },
     },
+  },
 });
 
-type ButtonVariants = VariantProps<typeof buttonVariants>
+// Theme colors are fully typed
+theme.colors.primary;     // ✅ Autocomplete works
+theme.colors.nonexistent; // ❌ Type error
 
-interface ButtonProps extends ButtonVariants {
-  children: React.ReactNode;
-}
-
-export const Button = (props: ButtonProps) => {
-  const { root, text } = buttonVarints(props)
-
-  return
-  <TouchableOpacity style={root}>
-    <Text style={text}>
-     {props.children}
-    </Text>
-  </TouchableOpacity>;
-};
-
+// Tokens are typed
+theme.spacing["4"];       // ✅ number
+theme.palette.blue500;    // ✅ string
+theme.fontWeights.bold;   // ✅ "700"
 ```
 
-## Required variants
+## VariantProps
 
-Native Variants doesn't offer a way to make variants required yet, but you can use TypeScript's [Utility Types](https://www.typescriptlang.org/docs/handbook/utility-types.html) to achieve this.
+Extract variant types from a styled component using `VariantProps`.
 
 ```tsx
-import { nv } from 'native-variants'
+import { createNVA, type VariantProps } from "native-variants";
 
-const buttonVariants = nv({
-  slots: ['root', 'text'],
-  base: "px-4 py-1.5 rounded-full hover:opacity-80",
+const { styled } = createNVA({ /* theme */ });
+
+const buttonVariants = styled((ctx, t) => ctx({
+  slots: ["root", "text"],
+  base: { /* ... */ },
   variants: {
-    color: {
-      primary: {
-        root: {
-          backgroundColor: 'blue'
-        },
-        text: {
-          color: 'white'
-        }
-      },
-      neutral: {
-        root: {
-          backgroundColor: 'gray'
-        },
-        text: {
-          color: 'white'
-        }
-      }
+    variant: {
+      solid: { /* ... */ },
+      outline: { /* ... */ },
+      ghost: { /* ... */ },
     },
-    requiredFlat: {
-      true: {
-        root: {
-          backgroundColor: 'transparent'
-        }
-      },
-      false: {
-        backgroundColor: 'black'
-      },
+    size: {
+      sm: { /* ... */ },
+      md: { /* ... */ },
+      lg: { /* ... */ },
+    },
+    disabled: {
+      true: { /* ... */ },
+      false: { /* ... */ },
     },
   },
   defaultVariants: {
-    color: "primary",
+    variant: "solid",
+    size: "md",
+    disabled: false,
   },
-  compoundVariants: [...],
+}));
+
+// Extract variant props type
+type ButtonVariantProps = VariantProps<typeof buttonVariants>;
+// Result: {
+//   variant?: "solid" | "outline" | "ghost";
+//   size?: "sm" | "md" | "lg";
+//   disabled?: boolean;
+// }
+
+// Use in component props
+interface ButtonProps extends ButtonVariantProps {
+  children: React.ReactNode;
+  onPress?: () => void;
+}
+
+export function Button({ 
+  children, 
+  variant, 
+  size, 
+  disabled,
+  onPress,
+}: ButtonProps) {
+  const { root, text } = buttonVariants({ variant, size, disabled });
+  
+  return (
+    <TouchableOpacity style={root} disabled={disabled} onPress={onPress}>
+      <Text style={text}>{children}</Text>
+    </TouchableOpacity>
+  );
+}
+```
+
+## Type-Safe Color Schemes
+
+TypeScript ensures that `default` and `dark` color schemes have exactly the same keys.
+
+```tsx
+// ❌ Type Error: 'dark' is missing 'accent' that exists in 'default'
+const { styled } = createNVA({
+  theme: {
+    colors: {
+      default: {
+        primary: "#3b82f6",
+        accent: "#f97316", // ← Exists here
+      },
+      dark: {
+        primary: "#60a5fa",
+        // ← Missing 'accent' - TypeScript will error!
+      },
+    },
+  },
 });
 
-type ButtonVariants = VariantProps<typeof buttonVariants>
+// ✅ Correct - both schemes have the same keys
+const { styled } = createNVA({
+  theme: {
+    colors: {
+      default: {
+        primary: "#3b82f6",
+        accent: "#f97316",
+      },
+      dark: {
+        primary: "#60a5fa",
+        accent: "#fb923c",
+      },
+    },
+  },
+});
+```
 
-export interface ButtonProps
-  extends Omit<ButtonVariants, "requiredFlat">,
-    Required<Pick<ButtonVariants, "requiredFlat">> {}
+## Typed Theme Colors
 
-export const button = (props: ButtonProps) => buttonVariants(props);
+Export your colors type for use with hooks.
 
-// ❌ TypeScript Error:
-// Argument of type "{}": is not assignable to parameter of type "ButtonProps".
-// Property "requiredFlat" is missing in type "{}" but required in type "ButtonProps".
-button({});
+```tsx
+// lib/nva.ts
+import { createNVA } from "native-variants";
 
-// ✅
-button({ requiredFlat: true });
+const colors = {
+  default: {
+    primary: "#3b82f6",
+    secondary: "#8b5cf6",
+    background: "#ffffff",
+    foreground: "#0a0a0a",
+    muted: "#71717a",
+  },
+  dark: {
+    primary: "#60a5fa",
+    secondary: "#a78bfa",
+    background: "#0a0a0a",
+    foreground: "#fafafa",
+    muted: "#a1a1aa",
+  },
+} as const;
+
+// Export the colors type
+export type AppColors = typeof colors.default;
+
+export const { styled, theme, colorScheme } = createNVA({
+  theme: { colors },
+});
+
+// components/MyComponent.tsx
+import { useTheme } from "native-variants";
+import type { AppColors } from "@/lib/nva";
+
+function MyComponent() {
+  // Fully typed colors with autocomplete
+  const { colors } = useTheme<AppColors>();
+  
+  return (
+    <View style={{ backgroundColor: colors.background }}>
+      <Text style={{ color: colors.primary }}>Hello</Text>
+    </View>
+  );
+}
+```
+
+## Required Variants
+
+Make specific variants required using TypeScript utilities.
+
+```tsx
+import type { VariantProps } from "native-variants";
+
+const buttonVariants = styled((ctx, t) => ctx({
+  slots: ["root", "text"],
+  base: { /* ... */ },
+  variants: {
+    variant: {
+      solid: { /* ... */ },
+      outline: { /* ... */ },
+    },
+    intent: {
+      primary: { /* ... */ },
+      danger: { /* ... */ },
+    },
+  },
+  defaultVariants: {
+    variant: "solid",
+    // No default for 'intent' - we want it required
+  },
+}));
+
+type ButtonVariants = VariantProps<typeof buttonVariants>;
+
+// Make 'intent' required
+interface ButtonProps
+  extends Omit<ButtonVariants, "intent">,
+    Required<Pick<ButtonVariants, "intent">> {
+  children: React.ReactNode;
+}
+
+// Usage
+<Button intent="primary">OK</Button>        // ✅
+<Button intent="danger">Delete</Button>     // ✅
+<Button>Missing Intent</Button>             // ❌ Error: 'intent' is required
+```
+
+## Typed Themed Styles
+
+Use `createThemedStyles` with proper typing.
+
+```tsx
+import { createThemedStyles } from "native-variants";
+import type { ViewStyle, TextStyle } from "react-native";
+import type { AppColors } from "@/lib/nva";
+
+const useCardStyles = createThemedStyles<AppColors, {
+  container: ViewStyle;
+  title: TextStyle;
+  description: TextStyle;
+}>((colors) => ({
+  container: {
+    backgroundColor: colors.background,
+    borderColor: colors.muted,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+  },
+  title: {
+    color: colors.foreground,
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  description: {
+    color: colors.muted,
+    fontSize: 14,
+  },
+}));
+
+function Card({ title, description }) {
+  const styles = useCardStyles();
+  // styles.container is ViewStyle
+  // styles.title is TextStyle
+  
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.description}>{description}</Text>
+    </View>
+  );
+}
+```
+
+## Generic Styled Components
+
+Create reusable typed components.
+
+```tsx
+import type { VariantProps } from "native-variants";
+import type { ViewStyle, TextStyle } from "react-native";
+
+// Generic Box component
+const boxVariants = styled((ctx, t) => ctx({
+  slots: ["root"],
+  base: {
+    root: {},
+  },
+  variants: {
+    p: {
+      0: { root: { padding: 0 } },
+      1: { root: { padding: t.spacing["1"] } },
+      2: { root: { padding: t.spacing["2"] } },
+      4: { root: { padding: t.spacing["4"] } },
+      8: { root: { padding: t.spacing["8"] } },
+    },
+    m: {
+      0: { root: { margin: 0 } },
+      1: { root: { margin: t.spacing["1"] } },
+      2: { root: { margin: t.spacing["2"] } },
+      4: { root: { margin: t.spacing["4"] } },
+      8: { root: { margin: t.spacing["8"] } },
+    },
+    rounded: {
+      none: { root: { borderRadius: 0 } },
+      sm: { root: { borderRadius: t.radii.sm } },
+      md: { root: { borderRadius: t.radii.md } },
+      lg: { root: { borderRadius: t.radii.lg } },
+      full: { root: { borderRadius: t.radii.full } },
+    },
+  },
+}));
+
+type BoxProps = VariantProps<typeof boxVariants> & {
+  children?: React.ReactNode;
+  style?: ViewStyle;
+};
+
+export function Box({ children, style, ...variants }: BoxProps) {
+  const { root } = boxVariants(variants);
+  return <View style={[root, style]}>{children}</View>;
+}
+
+// Usage with full type inference
+<Box p={4} m={2} rounded="lg">
+  <Text>Content</Text>
+</Box>
+```
+
+## Type Exports
+
+Native Variants exports several useful types.
+
+```tsx
+import type {
+  // Core types
+  Styles,           // Base style type (ViewStyle | TextStyle | ImageStyle)
+  Base,             // Base styles object type
+  Variants,         // Variants configuration type
+  Config,           // Full styled config type
+  VariantProps,     // Extract variant props from styled
+  
+  // Theme types
+  Theme,            // Deprecated - use ThemeOutput
+  ThemeInput,       // Theme input configuration
+  ThemeOutput,      // Resolved theme type
+  ColorSchemeConfig, // Color scheme with default/dark
+  
+  // Provider types
+  ColorScheme,      // "light" | "dark"
+  ThemeMode,        // "light" | "dark" | "system"
+  ThemeContextValue, // useTheme return type
+  ThemeProviderProps, // ThemeProvider props
+  
+  // Token types
+  TailwindColors,
+  TailwindSpacing,
+  TailwindFontSizes,
+  TailwindRadii,
+  TailwindShadows,
+  TailwindZIndex,
+  TailwindOpacity,
+  TailwindLineHeights,
+  TailwindFontWeights,
+  TailwindLetterSpacing,
+  TailwindBorderWidths,
+  TailwindDurations,
+} from "native-variants";
+```
+
+## Best Practices
+
+### 1. Centralize Theme Definition
+
+```tsx
+// lib/nva.ts
+import { createNVA } from "native-variants";
+
+const colors = { /* ... */ } as const;
+
+export type AppColors = typeof colors.default;
+export const { styled, theme, colorScheme } = createNVA({
+  theme: { colors },
+});
+```
+
+### 2. Export Variant Types
+
+```tsx
+// components/Button.tsx
+export const buttonVariants = styled(/* ... */);
+export type ButtonVariantProps = VariantProps<typeof buttonVariants>;
+export type ButtonProps = ButtonVariantProps & {
+  children: React.ReactNode;
+};
+```
+
+### 3. Use `as const` for Better Inference
+
+```tsx
+const colors = {
+  default: {
+    primary: "#3b82f6",
+  },
+  dark: {
+    primary: "#60a5fa",
+  },
+} as const; // ← Important for literal types
+```
+
+### 4. Type Component Props
+
+```tsx
+import type { ComponentPropsWithoutRef } from "react";
+import type { TouchableOpacity } from "react-native";
+
+interface ButtonProps
+  extends ComponentPropsWithoutRef<typeof TouchableOpacity>,
+    VariantProps<typeof buttonVariants> {
+  children: React.ReactNode;
+}
+```
+
+### 5. Use Strict Mode
+
+Enable strict mode in your `tsconfig.json` for the best type checking.
+
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true
+  }
+}
 ```

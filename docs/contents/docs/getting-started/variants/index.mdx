@@ -1,336 +1,573 @@
 ---
 title: Variants
-description: Variants allows you to create multiple versions of the same component.
+description: Create multiple versions of the same component with variants.
 ---
 
-## Adding variants
+Variants allow you to create multiple versions of the same component with a clean, declarative API.
 
-You can add variants by using the `variants` key. There's no limit to how many variants you can add.
+## Basic Variants
+
+Add variants using the `variants` key in your styled configuration.
 
 ```tsx
-import { nv } from "native-variants";
+import { createNVA } from "native-variants";
 
-const buttonVariants = nv({
+const { styled, theme } = createNVA({
+  theme: {
+    colors: {
+      default: { primary: "#3b82f6", background: "#ffffff" },
+      dark: { primary: "#60a5fa", background: "#0a0a0a" },
+    },
+  },
+});
+
+const buttonVariants = styled((ctx, t) => ctx({
   slots: ["root", "text"],
   base: {
-    root: { paddingHorizontal: 16, paddingVertical: 12 },
-    text: { color: "#ffffff", textAlign: "center" },
+    root: { 
+      paddingHorizontal: t.spacing["4"],
+      paddingVertical: t.spacing["3"],
+      borderRadius: t.radii.lg,
+    },
+    text: { 
+      color: t.colors.background,
+      textAlign: "center",
+      fontWeight: t.fontWeights.semibold,
+    },
   },
   variants: {
     variant: {
       solid: {
-        root: { backgroundColor: "#ff0006" },
-        text: { color: "#ffffff" },
+        root: { backgroundColor: t.colors.primary },
+        text: { color: t.colors.background },
       },
       ghost: {
         root: { backgroundColor: "transparent" },
-        text: { color: "#ff0006" },
+        text: { color: t.colors.primary },
       },
     },
   },
-});
+}));
 
+// Usage
 const { root, text } = buttonVariants({ variant: "solid" });
-/**
- * Result:
- * root = backgroundColor: "#ff0006"
- * text = color: "#ffffff"
- */
+// root = { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 8, backgroundColor: "#3b82f6" }
+// text = { color: "#ffffff", textAlign: "center", fontWeight: "600" }
 ```
 
-## Multiple variants
+## Multiple Variants
 
-You can add multiple variants to a single component.
+Combine multiple variant dimensions for more flexibility.
 
 ```tsx
-import { nv } from 'native-variants'
-
-const buttonVariants = nv({
-    slots: ["root", "text"],
-    base: {
-      root: { paddingHorizontal: 16, paddingVertical: 12 },
-      text: { color: "#ffffff", textAlign: "center" },
-    },
-    variants: {
-      variant: {
-        solid: {
-          root: { backgroundColor: "#ff0006" },
-          text: { color: "#ffffff" },
-        },
-        ghost: {
-          root: { backgroundColor: "transparent" },
-          text: { color: "#ff0006" },
-        },
-      },
-      size: {
-        sm: {
-          root: {
-            paddingHorizontal: 8,
-            paddingVertical: 12
-          }
-          text: {
-            fontSize: 14
-          }
-        },
-        md: {
-          root: {
-            paddingHorizontal: 12,
-            paddingVertical: 16
-          },
-           text: {
-            fontSize: 16
-          }
-        },
-      }
-    },
-});
-
-
-const { root, text } = buttonVariants({ variant: 'solid', size: 'sm' })
-/**
- * Result:
- * root = {
- *    paddingHorizontal: 8,
- *    paddingVertical: 12
- *    backgroundColor: "#ff0006"
- * }
- * text = {
- *    color: "#ffffff",
- *    fontSize: 14
- * }
- */
-
-const { root, text } = buttonVariants({ variant: 'ghost', size: 'md' })
-/**
- * Result:
- * root = {}
- *    paddingHorizontal: 12,
- *    paddingVertical: 16
- *    backgroundColor: "transparent"
- * }
- * text = {
- *    color: "#ff0006"
- *    fontSize: 16
- * }
- */
-```
-
-## Boolean variants
-
-You can also add boolean variants to a component. This is useful when you want to add a state variant e.g. `disabled`.
-
-```jsx
-import { nv } from "native-variants";
-
-const button = nv({
+const buttonVariants = styled((ctx, t) => ctx({
   slots: ["root", "text"],
   base: {
-    root: {
-      borderRadius: 9999,
-      paddingVertical: 4,
-      paddingHorizontal: 16,
+    root: { 
+      paddingHorizontal: t.spacing["4"],
+      paddingVertical: t.spacing["3"],
+      borderRadius: t.radii.lg,
     },
-    text: {
-      color: "#ffffff",
-      fontWeight: "600",
-      fontSize: 14,
-    },
-  },
-  variants: {
-    color: {
-      primary: {
-        root: {
-          backgroundColor: "#3b82f6",
-        },
-      },
-      secondary: {
-        root: {
-          backgroundColor: "#8b5cf6",
-        },
-      },
-      success: {
-        root: {
-          backgroundColor: "#22c55e",
-        },
-      },
-    },
-    disabled: {
-      true: {
-        root: {
-          opacity: 0.5,
-          backgroundColor: "#6b7280",
-          pointerEvents: "none",
-        },
-      },
-    },
-  },
-});
-
-const { root, text } = button({ color: "secondary", disabled: true });
-/**
- * Result:
- * root = {
- *    paddingHorizontal: 16,
- *    paddingVertical: 4,
- *    borderRadius: 9999,
- *    opacity: 0.5,
- *    backgroundColor: "#6b7280",
- *    pointerEvents: "none",
- * }
- * text = {
- *    color: "white",
- *    fontWeight: "600",
- *    fontSize: 14,
- * }
- */
-```
-
-## Compound variants
-
-Sometimes you might want to add a variant that depends on another variant. For example, you might want to add a `color` variant that depends on the `disabled` variant. This is possible by using the compoundVariants key.
-
-```tsx
-import { nv } from "native-variants";
-
-const buttonVariants = nv({
-  slots: ["root", "text"],
-  base: {
-    root: {
-      fontWeight: "600",
-      paddingVertical: 4,
-      paddingHorizontal: 16,
-      borderRadius: 9999,
-    },
-    text: {
-      color: "#ffffff",
-      fontSize: 14,
-    },
-  },
-  variants: {
-    color: {
-      primary: {
-        root: {
-          backgroundColor: "#3b82f6",
-        },
-      },
-      secondary: {
-        root: {
-          backgroundColor: "#8b5cf6",
-        },
-      },
-      success: {
-        root: {
-          backgroundColor: "#22c55e",
-        },
-      },
-    },
-    disabled: {
-      true: {
-        root: {
-          opacity: 0.5,
-          backgroundColor: "#6b7280",
-          pointerEvents: "none",
-        },
-      },
-    },
-  },
-  compoundVariants: [
-    {
-      variant: "success",
-      disabled: true,
-      css: {
-        root: {
-          backgroundColor: "#d9f99d",
-        },
-        text: {
-          color: "#15803d",
-        },
-      },
-    },
-  ],
-});
-
-const { root, text } = buttonVariants({ color: "success", disabled: true });
-
-/**
- * Result:
- * root = {
- *   paddingVertical: 4,
- *   paddingHorizontal: 16,
- *   borderRadius: 9999,
- *   opacity: 0.5,
- *   backgroundColor: "#d9f99d",
- *   pointerEvents: "none"
- * }
- * text = {
- *   fontWeight: "600",
- *   fontSize: 14,
- *   color: "#15803d",
- * }
- */
-```
-
-# Default variants
-
-You can also add a default variant to a component. This is useful when you want to add a predefined variants values to a component.
-
-```tsx
-import { nv } from "native-variants";
-
-const buttonVariants = nv({
-  slots: ["root", "text"],
-  base: {
-    root: {
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      width: "100%",
-    },
-    text: {
-      color: "#ffffff",
+    text: { 
+      color: t.colors.background,
       textAlign: "center",
-      fontWeight: "600",
     },
   },
   variants: {
     variant: {
-      destructive: {
-        root: {
-          backgroundColor: "#ff0006",
+      solid: {
+        root: { backgroundColor: t.colors.primary },
+        text: { color: t.colors.background },
+      },
+      outline: {
+        root: { 
+          backgroundColor: "transparent",
+          borderWidth: 1,
+          borderColor: t.colors.primary,
         },
+        text: { color: t.colors.primary },
       },
       ghost: {
-        root: {
-          backgroundColor: "#39bd79",
-        },
+        root: { backgroundColor: "transparent" },
+        text: { color: t.colors.primary },
       },
     },
-    isDisabled: {
+    size: {
+      sm: {
+        root: {
+          paddingHorizontal: t.spacing["3"],
+          paddingVertical: t.spacing["2"],
+        },
+        text: { fontSize: t.fontSizes.sm },
+      },
+      md: {
+        root: {
+          paddingHorizontal: t.spacing["4"],
+          paddingVertical: t.spacing["3"],
+        },
+        text: { fontSize: t.fontSizes.base },
+      },
+      lg: {
+        root: {
+          paddingHorizontal: t.spacing["6"],
+          paddingVertical: t.spacing["4"],
+        },
+        text: { fontSize: t.fontSizes.lg },
+      },
+    },
+  },
+}));
+
+// Usage
+const smallGhost = buttonVariants({ variant: "ghost", size: "sm" });
+const largeOutline = buttonVariants({ variant: "outline", size: "lg" });
+```
+
+## Boolean Variants
+
+Use `true` and `false` keys for boolean variants. No type casting needed!
+
+```tsx
+import { alpha } from "native-variants";
+
+const buttonVariants = styled((ctx, t) => ctx({
+  slots: ["root", "text"],
+  base: {
+    root: {
+      borderRadius: t.radii.full,
+      paddingVertical: t.spacing["1"],
+      paddingHorizontal: t.spacing["4"],
+    },
+    text: {
+      color: t.colors.background,
+      fontWeight: t.fontWeights.semibold,
+      fontSize: t.fontSizes.sm,
+    },
+  },
+  variants: {
+    color: {
+      primary: {
+        root: { backgroundColor: t.colors.primary },
+      },
+      secondary: {
+        root: { backgroundColor: t.palette.violet500 },
+      },
+      success: {
+        root: { backgroundColor: t.palette.green500 },
+      },
+    },
+    disabled: {
       true: {
         root: {
-          opacity: 50,
+          opacity: t.opacity["50"],
+          backgroundColor: t.palette.gray400,
+          pointerEvents: "none",
         },
       },
       false: {
         root: {
-          opacity: 100,
+          opacity: t.opacity["100"],
         },
+      },
+    },
+    fullWidth: {
+      true: {
+        root: { width: "100%" },
+      },
+      false: {
+        root: { width: "auto" },
       },
     },
   },
   defaultVariants: {
-    variant: "destructive",
-    isDisabled: true,
+    color: "primary",
+    disabled: false,
+    fullWidth: false,
+  },
+}));
+
+// Usage - boolean values work directly!
+const styles = buttonVariants({ 
+  color: "secondary", 
+  disabled: true,      // ✅ No @ts-expect-error needed!
+  fullWidth: false,
+});
+```
+
+## Compound Variants
+
+Apply styles when multiple variants match specific values.
+
+```tsx
+import { alpha } from "native-variants";
+
+const buttonVariants = styled((ctx, t) => ctx({
+  slots: ["root", "text"],
+  base: {
+    root: {
+      fontWeight: t.fontWeights.semibold,
+      paddingVertical: t.spacing["1"],
+      paddingHorizontal: t.spacing["4"],
+      borderRadius: t.radii.full,
+    },
+    text: {
+      color: t.colors.background,
+      fontSize: t.fontSizes.sm,
+    },
+  },
+  variants: {
+    color: {
+      primary: {
+        root: { backgroundColor: t.colors.primary },
+      },
+      success: {
+        root: { backgroundColor: t.palette.green500 },
+      },
+      destructive: {
+        root: { backgroundColor: t.palette.red500 },
+      },
+    },
+    disabled: {
+      true: {
+        root: {
+          opacity: t.opacity["50"],
+          pointerEvents: "none",
+        },
+      },
+      false: {
+        root: { opacity: t.opacity["100"] },
+      },
+    },
+  },
+  compoundVariants: [
+    // Primary + disabled
+    {
+      color: "primary",
+      disabled: true,  // ✅ Boolean works directly!
+      css: {
+        root: {
+          backgroundColor: alpha(t.colors.primary, 30),
+        },
+        text: {
+          color: t.colors.primary,
+        },
+      },
+    },
+    // Success + disabled
+    {
+      color: "success",
+      disabled: true,
+      css: {
+        root: {
+          backgroundColor: t.palette.lime200,
+        },
+        text: {
+          color: t.palette.green800,
+        },
+      },
+    },
+    // Destructive + disabled
+    {
+      color: "destructive",
+      disabled: true,
+      css: {
+        root: {
+          backgroundColor: t.palette.red200,
+        },
+        text: {
+          color: t.palette.red800,
+        },
+      },
+    },
+  ],
+}));
+
+// When both conditions match, compound styles are applied
+const styles = buttonVariants({ color: "success", disabled: true });
+// Applies: base + color.success + disabled.true + compoundVariants[1]
+```
+
+## Default Variants
+
+Set default values for variants when no value is provided.
+
+```tsx
+const buttonVariants = styled((ctx, t) => ctx({
+  slots: ["root", "text"],
+  base: {
+    root: {
+      paddingHorizontal: t.spacing["4"],
+      paddingVertical: t.spacing["3"],
+      width: "100%",
+    },
+    text: {
+      color: t.colors.background,
+      textAlign: "center",
+      fontWeight: t.fontWeights.semibold,
+    },
+  },
+  variants: {
+    variant: {
+      default: {
+        root: { backgroundColor: t.colors.primary },
+      },
+      destructive: {
+        root: { backgroundColor: t.palette.red500 },
+      },
+      outline: {
+        root: {
+          backgroundColor: "transparent",
+          borderWidth: 1,
+          borderColor: t.colors.primary,
+        },
+        text: { color: t.colors.primary },
+      },
+    },
+    size: {
+      sm: {
+        root: { paddingVertical: t.spacing["2"] },
+        text: { fontSize: t.fontSizes.sm },
+      },
+      md: {
+        root: { paddingVertical: t.spacing["3"] },
+        text: { fontSize: t.fontSizes.base },
+      },
+      lg: {
+        root: { paddingVertical: t.spacing["4"] },
+        text: { fontSize: t.fontSizes.lg },
+      },
+    },
+    disabled: {
+      true: {
+        root: { opacity: t.opacity["50"] },
+      },
+      false: {
+        root: { opacity: t.opacity["100"] },
+      },
+    },
+  },
+  defaultVariants: {
+    variant: "default",
+    size: "md",
+    disabled: false,
+  },
+}));
+
+// Called with no arguments - uses all defaults
+const styles = buttonVariants();
+// Equivalent to: buttonVariants({ variant: "default", size: "md", disabled: false })
+
+// Override just one default
+const destructive = buttonVariants({ variant: "destructive" });
+// Uses variant: "destructive", size: "md" (default), disabled: false (default)
+```
+
+## Complete Button Example
+
+Here's a full example of a button component with variants:
+
+```tsx
+// lib/nva.ts
+import { createNVA, alpha } from "native-variants";
+
+export const { styled, theme, colorScheme } = createNVA({
+  theme: {
+    colors: {
+      default: {
+        primary: "#3b82f6",
+        secondary: "#8b5cf6",
+        destructive: "#ef4444",
+        background: "#ffffff",
+        foreground: "#0a0a0a",
+        muted: "#f4f4f5",
+        ring: "#a1a1aa",
+      },
+      dark: {
+        primary: "#60a5fa",
+        secondary: "#a78bfa",
+        destructive: "#f87171",
+        background: "#0a0a0a",
+        foreground: "#fafafa",
+        muted: "#27272a",
+        ring: "#52525b",
+      },
+    },
   },
 });
 
-const { root, text } = buttonVariants();
-/**
- * Result:
- * root = {
- * backgroundColor: "#ff0006",
- * }
- * text = {
- * color: "#ffffff"
- * }
- */
+// components/Button.tsx
+import { styled, theme } from "@/lib/nva";
+import type { VariantProps } from "native-variants";
+
+const buttonVariants = styled((ctx, t) => ctx({
+  slots: ["root", "text"],
+  base: {
+    root: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "row",
+      borderWidth: 1,
+      borderColor: "transparent",
+      gap: t.spacing["2"],
+    },
+    text: {
+      fontWeight: t.fontWeights.medium,
+      textAlign: "center",
+      textAlignVertical: "center",
+    },
+  },
+  variants: {
+    variant: {
+      default: {
+        root: { backgroundColor: t.colors.primary },
+        text: { color: t.colors.background },
+      },
+      secondary: {
+        root: { 
+          backgroundColor: t.colors.secondary,
+          borderColor: t.colors.secondary,
+        },
+        text: { color: t.colors.background },
+      },
+      outline: {
+        root: {
+          backgroundColor: "transparent",
+          borderColor: t.colors.primary,
+        },
+        text: { color: t.colors.primary },
+      },
+      ghost: {
+        root: { backgroundColor: "transparent" },
+        text: { color: t.colors.primary },
+      },
+      destructive: {
+        root: { backgroundColor: t.colors.destructive },
+        text: { color: t.colors.background },
+      },
+    },
+    size: {
+      sm: {
+        root: {
+          minHeight: 36,
+          paddingHorizontal: t.spacing["3"],
+          borderRadius: t.radii.md,
+        },
+        text: { fontSize: t.fontSizes.sm },
+      },
+      default: {
+        root: {
+          minHeight: 44,
+          paddingHorizontal: t.spacing["4"],
+          borderRadius: t.radii.lg,
+        },
+        text: { fontSize: t.fontSizes.base },
+      },
+      lg: {
+        root: {
+          minHeight: 52,
+          paddingHorizontal: t.spacing["6"],
+          borderRadius: t.radii.lg,
+        },
+        text: { fontSize: t.fontSizes.lg },
+      },
+      icon: {
+        root: {
+          width: 44,
+          height: 44,
+          borderRadius: t.radii.lg,
+          paddingHorizontal: 0,
+        },
+      },
+    },
+    disabled: {
+      true: {
+        root: {
+          pointerEvents: "none",
+          opacity: t.opacity["50"],
+        },
+      },
+      false: {
+        root: {
+          pointerEvents: "auto",
+          opacity: t.opacity["100"],
+        },
+      },
+    },
+    fullWidth: {
+      true: { root: { width: "100%" } },
+      false: { root: { width: "auto" } },
+    },
+  },
+  defaultVariants: {
+    variant: "default",
+    size: "default",
+    disabled: false,
+    fullWidth: false,
+  },
+  compoundVariants: [
+    {
+      variant: "ghost",
+      disabled: true,
+      css: {
+        root: { backgroundColor: alpha(t.colors.primary, 5) },
+        text: { color: t.colors.ring },
+      },
+    },
+    {
+      variant: "outline",
+      disabled: true,
+      css: {
+        root: {
+          borderColor: alpha(t.colors.primary, 30),
+          backgroundColor: alpha(t.colors.primary, 5),
+        },
+        text: { color: t.colors.ring },
+      },
+    },
+    {
+      variant: "default",
+      disabled: true,
+      css: {
+        root: { backgroundColor: alpha(t.colors.primary, 30) },
+        text: { color: t.colors.ring },
+      },
+    },
+  ],
+}));
+
+export type ButtonProps = 
+  React.ComponentPropsWithoutRef<typeof TouchableOpacity> &
+  VariantProps<typeof buttonVariants> & {
+    children: React.ReactNode;
+  };
+
+export function Button({
+  children,
+  variant,
+  size,
+  disabled,
+  fullWidth,
+  style,
+  ...props
+}: ButtonProps) {
+  const styles = buttonVariants({ variant, size, disabled, fullWidth });
+
+  return (
+    <TouchableOpacity
+      style={[styles.root, style]}
+      disabled={disabled}
+      activeOpacity={0.7}
+      {...props}
+    >
+      <Text style={styles.text}>{children}</Text>
+    </TouchableOpacity>
+  );
+}
+
+// Usage
+<Button>Default Button</Button>
+<Button variant="outline" size="lg">Large Outline</Button>
+<Button variant="destructive" disabled>Disabled Destructive</Button>
+<Button variant="ghost" size="sm" fullWidth>Full Width Ghost</Button>
 ```

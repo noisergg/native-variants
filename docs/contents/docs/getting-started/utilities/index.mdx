@@ -1,0 +1,419 @@
+---
+title: Utilities
+description: Helpful utility functions for styling, colors, and responsive design.
+---
+
+Native Variants provides several utility functions to enhance your styling workflow.
+
+## Style Merging
+
+### `cn`
+
+Combines multiple style objects into a single merged style. Compatible with `react-native-reanimated` animated styles.
+
+```tsx
+import { cn } from "native-variants";
+
+// Basic usage
+const style = cn(styles.root, { padding: 16 });
+
+// Multiple styles
+const style = cn(
+  baseStyles,
+  conditionalStyles,
+  { opacity: isVisible ? 1 : 0 }
+);
+
+// With animated styles (react-native-reanimated)
+const animatedStyle = useAnimatedStyle(() => ({
+  transform: [{ translateX: translateX.value }],
+}));
+const style = cn(styles.wrapper, animatedStyle);
+
+// Conditional styles
+const style = cn(
+  styles.button,
+  isActive && styles.active,
+  disabled && { opacity: 0.5 }
+);
+```
+
+### Type-Specific Variants
+
+For explicit typing, use the specialized variants:
+
+```tsx
+import { cnView, cnText, cnImage } from "native-variants";
+
+// ViewStyle
+const viewStyle = cnView(styles.container, { padding: 16 });
+
+// TextStyle
+const textStyle = cnText(styles.label, { fontSize: 18 });
+
+// ImageStyle
+const imageStyle = cnImage(styles.avatar, { borderRadius: 50 });
+```
+
+### Full Example
+
+```tsx
+import { cn } from "native-variants";
+import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
+
+function AnimatedCard({ isExpanded }) {
+  const height = useSharedValue(100);
+  
+  const animatedStyle = useAnimatedStyle(() => ({
+    height: height.value,
+  }));
+
+  return (
+    <Animated.View
+      style={cn(
+        styles.card,
+        animatedStyle,
+        isExpanded && styles.expanded
+      )}
+    >
+      {/* content */}
+    </Animated.View>
+  );
+}
+```
+
+## Color Utilities
+
+### `alpha`
+
+Adds transparency to a hex color. Returns a hex color with alpha channel.
+
+```tsx
+import { alpha } from "native-variants";
+
+// 50% opacity
+alpha("#FF0000", 50);  // "#FF00007F"
+
+// 10% opacity (subtle background)
+alpha("#3b82f6", 10);  // "#3b82f61A"
+
+// Fully transparent
+alpha("#FF0000", 0);   // "#FF000000"
+
+// Fully opaque
+alpha("#FF0000", 100); // "#FF0000FF"
+
+// Use with theme colors
+import { theme } from "@/lib/nva";
+
+const styles = {
+  overlay: {
+    backgroundColor: alpha(theme.colors.primary, 10),
+  },
+  border: {
+    borderColor: alpha(theme.colors.foreground, 20),
+  },
+};
+```
+
+### `hexToRgba`
+
+Converts a hex color to an RGBA string. Useful when you need CSS-style rgba() values.
+
+```tsx
+import { hexToRgba } from "native-variants";
+
+hexToRgba("#FF0000", 0.5);  // "rgba(255, 0, 0, 0.5)"
+hexToRgba("#3b82f6", 0.8);  // "rgba(59, 130, 246, 0.8)"
+
+// Supports 3-digit hex
+hexToRgba("#F00", 0.5);     // "rgba(255, 0, 0, 0.5)"
+```
+
+### `lighten`
+
+Lightens a hex color by a percentage.
+
+```tsx
+import { lighten } from "native-variants";
+
+lighten("#3b82f6", 10);  // Lighten blue by 10%
+lighten("#3b82f6", 20);  // Lighten blue by 20%
+lighten("#000000", 50);  // #7f7f7f (gray)
+```
+
+### `darken`
+
+Darkens a hex color by a percentage.
+
+```tsx
+import { darken } from "native-variants";
+
+darken("#3b82f6", 10);  // Darken blue by 10%
+darken("#3b82f6", 20);  // Darken blue by 20%
+darken("#ffffff", 50);  // #7f7f7f (gray)
+```
+
+### Color Utilities Example
+
+```tsx
+import { alpha, lighten, darken } from "native-variants";
+import { theme } from "@/lib/nva";
+
+const buttonVariants = styled((ctx, t) => ctx({
+  slots: ["root"],
+  base: {
+    root: {
+      backgroundColor: t.colors.primary,
+    },
+  },
+  variants: {
+    pressed: {
+      true: {
+        root: {
+          // Darken when pressed
+          backgroundColor: darken(t.colors.primary, 10),
+        },
+      },
+    },
+    disabled: {
+      true: {
+        root: {
+          // Lighten and reduce opacity when disabled
+          backgroundColor: alpha(lighten(t.colors.primary, 20), 50),
+        },
+      },
+    },
+  },
+}));
+```
+
+## Responsive Utilities
+
+### `wq` (Width Query)
+
+Calculates a width value based on screen percentage.
+
+```tsx
+import { wq } from "native-variants";
+
+// 50% of screen width
+const halfWidth = wq(50);
+
+// Using string percentage
+const quarterWidth = wq("25");
+
+// In styles
+const styles = {
+  container: {
+    width: wq(80),           // 80% of screen width
+    marginHorizontal: wq(10), // 10% margin on each side
+  },
+  card: {
+    width: wq(45),           // ~45% width (2 cards per row with gap)
+  },
+};
+```
+
+### `hq` (Height Query)
+
+Calculates a height value based on screen percentage.
+
+```tsx
+import { hq } from "native-variants";
+
+// 50% of screen height
+const halfHeight = hq(50);
+
+// In styles
+const styles = {
+  hero: {
+    height: hq(40),     // 40% of screen height
+    minHeight: hq(30),  // Minimum 30%
+  },
+  modal: {
+    maxHeight: hq(80),  // Max 80% of screen
+  },
+};
+```
+
+### `getScreenDimensions`
+
+Gets the current screen dimensions.
+
+```tsx
+import { getScreenDimensions } from "native-variants";
+
+const { width, height } = getScreenDimensions();
+const isLandscape = width > height;
+
+// Calculate aspect ratio
+const aspectRatio = width / height;
+```
+
+### `responsiveFontSize`
+
+Calculates a responsive font size that scales with screen width.
+
+```tsx
+import { responsiveFontSize } from "native-variants";
+
+// Responsive font that scales with screen size
+const titleSize = responsiveFontSize(24);
+
+// Less responsive (only 30% scaling)
+const subtitleSize = responsiveFontSize(18, 0.3);
+
+// More responsive (70% scaling)
+const heroSize = responsiveFontSize(32, 0.7);
+
+// In styles
+const styles = {
+  title: {
+    fontSize: responsiveFontSize(24),
+  },
+  body: {
+    fontSize: responsiveFontSize(16, 0.3),  // Less scaling for body text
+  },
+};
+```
+
+### Responsive Example
+
+```tsx
+import { wq, hq, responsiveFontSize } from "native-variants";
+
+const styles = StyleSheet.create({
+  hero: {
+    height: hq(50),
+    width: wq(100),
+    paddingHorizontal: wq(5),
+  },
+  title: {
+    fontSize: responsiveFontSize(32),
+    marginBottom: hq(2),
+  },
+  description: {
+    fontSize: responsiveFontSize(16, 0.3),
+    lineHeight: responsiveFontSize(24, 0.3),
+  },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: wq(2),
+  },
+  gridItem: {
+    width: wq(46), // ~46% for 2 columns with gap
+    height: hq(20),
+  },
+});
+```
+
+## Text Utilities
+
+### `composeText`
+
+Helper for composing text styles with platform-specific adjustments.
+
+```tsx
+import { composeText, hasTextStyles } from "native-variants";
+
+// Compose text-specific styles
+const textStyle = composeText(
+  styles.label,
+  { fontSize: 16, fontWeight: "bold" }
+);
+
+// Check if a style object has text properties
+if (hasTextStyles(style)) {
+  // Style contains text-related properties
+}
+```
+
+### `composeView`
+
+Helper for composing view styles.
+
+```tsx
+import { composeView } from "native-variants";
+
+const viewStyle = composeView(
+  styles.container,
+  { padding: 16, backgroundColor: "white" }
+);
+```
+
+## Complete Example
+
+```tsx
+import { 
+  cn, 
+  alpha, 
+  lighten, 
+  darken,
+  wq, 
+  hq, 
+  responsiveFontSize 
+} from "native-variants";
+import { styled, theme } from "@/lib/nva";
+
+const cardVariants = styled((ctx, t) => ctx({
+  slots: ["root", "image", "content", "title", "description"],
+  base: {
+    root: {
+      width: wq(90),
+      backgroundColor: t.colors.card,
+      borderRadius: t.radii.xl,
+      overflow: "hidden",
+      ...t.shadows.md,
+    },
+    image: {
+      width: "100%",
+      height: hq(25),
+    },
+    content: {
+      padding: t.spacing["4"],
+    },
+    title: {
+      fontSize: responsiveFontSize(20),
+      fontWeight: t.fontWeights.bold,
+      color: t.colors.cardForeground,
+      marginBottom: t.spacing["2"],
+    },
+    description: {
+      fontSize: responsiveFontSize(14, 0.3),
+      color: alpha(t.colors.cardForeground, 70),
+      lineHeight: responsiveFontSize(20, 0.3),
+    },
+  },
+  variants: {
+    featured: {
+      true: {
+        root: {
+          backgroundColor: lighten(t.colors.primary, 40),
+          borderWidth: 2,
+          borderColor: t.colors.primary,
+        },
+        title: {
+          color: darken(t.colors.primary, 20),
+        },
+      },
+    },
+  },
+}));
+
+function Card({ featured, title, description, image }) {
+  const styles = cardVariants({ featured });
+  
+  return (
+    <View style={styles.root}>
+      <Image source={image} style={styles.image} />
+      <View style={styles.content}>
+        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.description}>{description}</Text>
+      </View>
+    </View>
+  );
+}
+```
+

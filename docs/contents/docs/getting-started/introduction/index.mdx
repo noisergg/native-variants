@@ -1,24 +1,109 @@
 ---
 title: Introduction
-description: Simplify building React components with streamlined management of Style Sheet and variants.
+description: A type-safe styling library for React Native with Tailwind CSS inspired design tokens and dark/light theme support.
 ---
 
-**Native Variants** is a first-class variants API library for StyleSheet.
+**Native Variants** is a powerful styling library for React Native that combines:
+- 🎨 **Variant-based styling** inspired by [Stitches](https://stitches.dev/)
+- 🌗 **Dark/Light theme support** with system preference detection
+- 📐 **Tailwind CSS design tokens** (spacing, colors, shadows, and more)
+- 🚀 **Optimized performance** with built-in caching
+- 🔒 **Full TypeScript support** with autocomplete
 
 <Note title="Contribute">
-  Interested in helping me improve? Check out our [GitHub
+  Interested in helping improve Native Variants? Check out our [GitHub
   repository](https://github.com/matheussatoshi/native-variants) to get started!
   From feature suggestions to bug fixes, all contributions are welcome.
 </Note>
 
-### Variants
-
-Ever since [Stitches](https://stitches.dev/) introduced variants, we’ve become big fans of this approach. They’re a great way to create a consistent design system, so we created `Native Variants` to bring this functionality to mobile app development with `StyleSheet`.
+## Quick Start
 
 ```tsx
-import { nv } from "native-variants";
+import { createNVA, ThemeProvider, useTheme } from "native-variants";
 
-const buttonVariants = nv({
+// 1. Create your theme
+const { styled, theme, colorScheme } = createNVA({
+  theme: {
+    colors: {
+      default: {
+        primary: "#3b82f6",
+        background: "#ffffff",
+        foreground: "#000000",
+      },
+      dark: {
+        primary: "#60a5fa",
+        background: "#0a0a0a",
+        foreground: "#ffffff",
+      },
+    },
+  },
+});
+
+// 2. Create styled variants
+const buttonVariants = styled((ctx, t) => ctx({
+  slots: ["root", "text"],
+  base: {
+    root: {
+      paddingHorizontal: t.spacing["4"],
+      paddingVertical: t.spacing["3"],
+      borderRadius: t.radii.lg,
+    },
+    text: {
+      fontSize: t.fontSizes.base,
+      fontWeight: t.fontWeights.semibold,
+    },
+  },
+  variants: {
+    variant: {
+      solid: {
+        root: { backgroundColor: t.colors.primary },
+        text: { color: t.colors.background },
+      },
+      outline: {
+        root: { 
+          backgroundColor: "transparent",
+          borderWidth: t.borderWidths.DEFAULT,
+          borderColor: t.colors.primary,
+        },
+        text: { color: t.colors.primary },
+      },
+    },
+  },
+  defaultVariants: {
+    variant: "solid",
+  },
+}));
+
+// 3. Wrap your app with ThemeProvider
+function App() {
+  return (
+    <ThemeProvider colors={colorScheme}>
+      <MyApp />
+    </ThemeProvider>
+  );
+}
+
+// 4. Use in components
+function Button({ variant, children }) {
+  const { root, text } = buttonVariants({ variant });
+  const { colors } = useTheme();
+
+  return (
+    <TouchableOpacity style={root}>
+      <Text style={text}>{children}</Text>
+    </TouchableOpacity>
+  );
+}
+```
+
+## Core Features
+
+### Variants
+
+Create multiple versions of the same component with a clean, declarative API.
+
+```tsx
+const buttonVariants = styled((ctx, t) => ctx({
   slots: ["root", "text"],
   base: {
     root: { paddingHorizontal: 16, paddingVertical: 12 },
@@ -27,129 +112,176 @@ const buttonVariants = nv({
   variants: {
     variant: {
       solid: {
-        root: { backgroundColor: "#ff0006" },
-        text: { color: "#ffffff" },
+        root: { backgroundColor: t.colors.primary },
       },
       ghost: {
         root: { backgroundColor: "transparent" },
-        text: { color: "#ff0006" },
+        text: { color: t.colors.primary },
       },
+    },
+    size: {
+      sm: { root: { paddingVertical: 8 } },
+      lg: { root: { paddingVertical: 16 } },
+    },
+    disabled: {
+      true: { root: { opacity: 0.5 } },
+      false: { root: { opacity: 1 } },
     },
   },
   defaultVariants: {
     variant: "solid",
+    size: "sm",
+    disabled: false,
   },
+}));
+
+// Usage
+const styles = buttonVariants({ variant: "ghost", size: "lg" });
+```
+
+### Compound Variants
+
+Apply styles based on multiple variant combinations.
+
+```tsx
+const buttonVariants = styled((ctx, t) => ctx({
+  // ...base and variants
   compoundVariants: [
     {
-      variant: "ghost",
+      variant: "solid",
+      disabled: true,
       css: {
-        root: { borderWidth: 1, borderColor: "#fff006" },
+        root: { backgroundColor: t.palette.gray400 },
+        text: { color: t.palette.gray600 },
       },
     },
   ],
-});
-
-return (
-  <TouchableOpacity style={root}>
-    <Text style={text}>{children}</Text>
-  </TouchableOpacity>
-);
+}));
 ```
 
-[To learn more about variants, check the variants page.](/variants)
+### Slots
 
-### Split components into multiple slots
-
-You can style multiple components at once using the `slots` property.
+Split components into multiple parts, each with their own styles.
 
 ```tsx
-import { nv } from "native-variants";
-
-const cardVariants = nv({
-  slots: [
-    "root",
-    "avatar",
-    "wrapper",
-    "description",
-    "info_wrapper",
-    "name",
-    "role",
-  ],
+const cardVariants = styled((ctx, t) => ctx({
+  slots: ["root", "header", "content", "footer"],
   base: {
     root: {
-      flexDirection: "row",
-      backgroundColor: "#f1f5f9",
-      borderRadius: 16,
-      padding: 32,
-      paddingHorizontal: 0,
+      backgroundColor: t.colors.background,
+      borderRadius: t.radii.lg,
+      ...t.shadows.md,
     },
-    avatar: {
-      width: 96,
-      height: 96,
-      borderRadius: 48,
-      marginHorizontal: "auto",
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
+    header: {
+      padding: t.spacing["4"],
+      borderBottomWidth: 1,
     },
-    wrapper: {
-      flex: 1,
-      paddingTop: 24,
-      paddingHorizontal: 32,
-      textAlign: "center",
+    content: {
+      padding: t.spacing["4"],
     },
-    description: {
-      fontSize: 16,
-      fontWeight: "500",
-    },
-    info_wrapper: {
-      fontWeight: "500",
-    },
-    name: {
-      fontSize: 14,
-      color: "#0ea5e9",
-    },
-    role: {
-      fontSize: 14,
-      color: "#4b5563",
+    footer: {
+      padding: t.spacing["4"],
+      borderTopWidth: 1,
     },
   },
-});
+}));
+```
 
-const { root, avatar, wrapper, description, info_wrapper, name, role } =
-  cardVariants();
+### Built-in Tailwind CSS Tokens
 
-return (
-  <View style={root}>
-    <Image style={avatar} src={require("/intro-avatar.png")} />
-    <View style={wrapper}>
-      <Text style={description}>
-        “Tailwind variants allows you to reduce repeated code in your project
-        and make it more readable. They fixed the headache of building a design
-        system with TailwindCSS.”
+Access Tailwind CSS design tokens directly in your styles.
+
+```tsx
+const { styled, theme } = createNVA({ theme: { colors: { /* ... */ } } });
+
+// Use tokens in your styles
+const styles = {
+  container: {
+    padding: theme.spacing["4"],        // 16
+    borderRadius: theme.radii.lg,       // 8
+    ...theme.shadows.md,                // shadow object
+  },
+  text: {
+    fontSize: theme.fontSizes.lg,       // 18
+    fontWeight: theme.fontWeights.bold, // "700"
+    letterSpacing: theme.letterSpacing.tight, // -0.4
+  },
+};
+
+// Full Tailwind color palette
+const blue = theme.palette.blue500;     // "#3b82f6"
+const red = theme.palette.red500;       // "#ef4444"
+```
+
+### Dark/Light Theme Support
+
+Built-in theme provider with system preference detection and persistence.
+
+```tsx
+import { ThemeProvider, useTheme, useIsDark } from "native-variants";
+
+function App() {
+  return (
+    <ThemeProvider 
+      colors={colorScheme}
+      defaultMode="system"
+    >
+      <MyApp />
+    </ThemeProvider>
+  );
+}
+
+function MyComponent() {
+  const { colors, isDark, toggle, setMode } = useTheme();
+
+  return (
+    <View style={{ backgroundColor: colors.background }}>
+      <Text style={{ color: colors.foreground }}>
+        {isDark ? "Dark Mode" : "Light Mode"}
       </Text>
-      <View style={infoWrapper}>
-        <View style={name}>Zoey Lang</View>
-        <View style={role}>Full-stack developer, NextUI</View>
-      </View>
+      <Button onPress={toggle} title="Toggle Theme" />
     </View>
-  </View>
+  );
+}
+```
+
+### Style Merging with `cn`
+
+Merge styles easily, compatible with `react-native-reanimated`.
+
+```tsx
+import { cn } from "native-variants";
+
+const style = cn(
+  styles.root,
+  animatedStyle,
+  { padding: 16 },
+  isActive && styles.active
 );
 ```
 
-### Automatic conflict resolution
+### Color Utilities
 
-**Native Variants** implements native-merge under the hood, so it efficiently merges your styles so you don't have to worry about `StyleSheet` property conflicts.
+Manipulate colors with built-in utilities.
 
-### Developer Experience
+```tsx
+import { alpha, lighten, darken } from "native-variants";
 
-**Native Variants** was built with the developer experience in mind and offers a great autocomplete experience thanks to its fully typed API. So when using TypeScript, <span className='highlight'>slots</span>, <span className='highlight'>`values`</span>, and <span className='highlight'>`breakpoints`</span> will be autocompleted for you.
+const color = alpha(theme.colors.primary, 0.5);  // 50% opacity
+const lighter = lighten(theme.colors.primary, 0.2);
+const darker = darken(theme.colors.primary, 0.2);
+```
 
-### Framework agnostic
+## Developer Experience
 
-**Native Variants** is a utility library that only works with React Native.
+Native Variants was built with the developer experience in mind:
 
-### Credits
+- **Full TypeScript support** with autocomplete for variants, slots, and tokens
+- **Type-safe color schemes** - TypeScript ensures `dark` and `default` colors have the same keys
+- **Performance optimized** with built-in caching for variant computations
+- **JSDoc documentation** with inline examples and token values
+
+## Credits
 
 - Special thanks to [matheussatoshi](https://github.com/matheussatoshi) 💚
+- Inspired by [Stitches](https://stitches.dev/) and [Tailwind CSS](https://tailwindcss.com/)

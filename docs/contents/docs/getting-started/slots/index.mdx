@@ -1,248 +1,564 @@
 ---
 title: Slots
-description: Slots allows you to separate a component into multiple parts.
+description: Split components into multiple styled parts with slots.
 ---
+
+Slots allow you to separate a component into multiple styled parts, each with their own styles that respond to variants.
 
 ## Basic Usage
 
-You can add slots by using the `slots` key. There's no limit to how many slots you can add.
+Define slots using the `slots` array. Each slot becomes a key in the returned styles object.
 
 ```tsx
-import { nv } from "native-variants";
+import { createNVA } from "native-variants";
 
-const cardVariants = nv({
-  slots: [
-    "root",
-    "avatar",
-    "wrapper",
-    "description",
-    "info_wrapper",
-    "name",
-    "role",
-  ],
-  base: {
-    root: {
-      flexDirection: "row",
-      backgroundColor: "#f1f5f9",
-      borderRadius: 16,
-      padding: 32,
-      paddingHorizontal: 0,
-    },
-    avatar: {
-      width: 96,
-      height: 96,
-      borderRadius: 48,
-      marginHorizontal: "auto",
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-    },
-    wrapper: {
-      flex: 1,
-      paddingTop: 24,
-      paddingHorizontal: 32,
-      textAlign: "center",
-    },
-    description: {
-      fontSize: 16,
-      fontWeight: "500",
-    },
-    info_wrapper: {
-      fontWeight: "500",
-    },
-    name: {
-      fontSize: 14,
-      color: "#0ea5e9",
-    },
-    role: {
-      fontSize: 14,
-      color: "#4b5563",
+const { styled, theme } = createNVA({
+  theme: {
+    colors: {
+      default: {
+        primary: "#3b82f6",
+        background: "#ffffff",
+        foreground: "#0a0a0a",
+        muted: "#71717a",
+      },
+      dark: {
+        primary: "#60a5fa",
+        background: "#0a0a0a",
+        foreground: "#fafafa",
+        muted: "#a1a1aa",
+      },
     },
   },
 });
 
-const { root, avatar, wrapper, description, info_wrapper, name, role } =
-  cardVariants();
-
-return (
-  <View style={root}>
-    <Image style={avatar} src={require("/intro-avatar.png")} />
-    <View style={wrapper}>
-      <Text style={description}>
-        “Tailwind variants allows you to reduce repeated code in your project
-        and make it more readable. They fixed the headache of building a design
-        system with TailwindCSS.”
-      </Text>
-      <View style={infoWrapper}>
-        <View style={name}>Zoey Lang</View>
-        <View style={role}>Full-stack developer, NextUI</View>
-      </View>
-    </View>
-  </View>
-);
-```
-
-## Slots with variants
-
-You can also change the entire component and its slots by using the variants. See more about variants <a href='/docs/getting-started/variants'>here</a>.
-
-```tsx
-import { nv } from "native-variants";
-
-const cardVariants = nv({
+const cardVariants = styled((ctx, t) => ctx({
   slots: [
     "root",
     "avatar",
-    "wrapper",
+    "content",
+    "title",
     "description",
-    "info_wrapper",
-    "name",
-    "role",
   ],
   base: {
     root: {
       flexDirection: "row",
-      backgroundColor: "#f1f5f9",
-      borderRadius: 16,
-      padding: 32,
-      paddingHorizontal: 0,
+      backgroundColor: t.colors.background,
+      borderRadius: t.radii.xl,
+      padding: t.spacing["4"],
+      ...t.shadows.md,
     },
     avatar: {
-      width: 96,
-      height: 96,
-      borderRadius: 48,
-      marginHorizontal: "auto",
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
+      width: 48,
+      height: 48,
+      borderRadius: t.radii.full,
+      marginRight: t.spacing["3"],
     },
-    wrapper: {
+    content: {
       flex: 1,
-      paddingTop: 24,
-      paddingHorizontal: 32,
-      textAlign: "center",
+      justifyContent: "center",
+    },
+    title: {
+      fontSize: t.fontSizes.base,
+      fontWeight: t.fontWeights.semibold,
+      color: t.colors.foreground,
     },
     description: {
-      fontSize: 16,
-      fontWeight: "500",
+      fontSize: t.fontSizes.sm,
+      color: t.colors.muted,
+      marginTop: t.spacing["1"],
     },
-    info_wrapper: {
-      fontWeight: "500",
+  },
+}));
+
+// Usage - destructure each slot
+const { root, avatar, content, title, description } = cardVariants();
+
+function UserCard({ user }) {
+  return (
+    <View style={root}>
+      <Image source={{ uri: user.avatar }} style={avatar} />
+      <View style={content}>
+        <Text style={title}>{user.name}</Text>
+        <Text style={description}>{user.email}</Text>
+      </View>
+    </View>
+  );
+}
+```
+
+## Slots with Variants
+
+Each variant can style multiple slots at once.
+
+```tsx
+const alertVariants = styled((ctx, t) => ctx({
+  slots: ["root", "icon", "content", "title", "description"],
+  base: {
+    root: {
+      flexDirection: "row",
+      padding: t.spacing["4"],
+      borderRadius: t.radii.lg,
+      borderWidth: 1,
     },
-    name: {
-      fontSize: 14,
-      color: "#0ea5e9",
+    icon: {
+      marginRight: t.spacing["3"],
     },
-    role: {
-      fontSize: 14,
-      color: "#4b5563",
+    content: {
+      flex: 1,
+    },
+    title: {
+      fontSize: t.fontSizes.base,
+      fontWeight: t.fontWeights.semibold,
+      marginBottom: t.spacing["1"],
+    },
+    description: {
+      fontSize: t.fontSizes.sm,
     },
   },
   variants: {
-    color: {
-      red: {
+    variant: {
+      info: {
         root: {
-          flexDirection: "row",
-          backgroundColor: "#ff0006",
-          borderRadius: 16,
-          padding: 32,
-          paddingHorizontal: 0,
+          backgroundColor: t.palette.blue50,
+          borderColor: t.palette.blue200,
         },
-        avatar: {
-          width: 96,
-          height: 96,
-          borderRadius: 48,
-          marginHorizontal: "auto",
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
+        icon: { color: t.palette.blue500 },
+        title: { color: t.palette.blue900 },
+        description: { color: t.palette.blue700 },
+      },
+      success: {
+        root: {
+          backgroundColor: t.palette.green50,
+          borderColor: t.palette.green200,
         },
-        wrapper: {
-          flex: 1,
-          paddingTop: 24,
-          paddingHorizontal: 32,
-          textAlign: "center",
+        icon: { color: t.palette.green500 },
+        title: { color: t.palette.green900 },
+        description: { color: t.palette.green700 },
+      },
+      warning: {
+        root: {
+          backgroundColor: t.palette.amber50,
+          borderColor: t.palette.amber200,
         },
-        description: {
-          fontSize: 16,
-          fontWeight: "500",
+        icon: { color: t.palette.amber500 },
+        title: { color: t.palette.amber900 },
+        description: { color: t.palette.amber700 },
+      },
+      error: {
+        root: {
+          backgroundColor: t.palette.red50,
+          borderColor: t.palette.red200,
         },
-        info_wrapper: {
-          fontWeight: "500",
+        icon: { color: t.palette.red500 },
+        title: { color: t.palette.red900 },
+        description: { color: t.palette.red700 },
+      },
+    },
+  },
+  defaultVariants: {
+    variant: "info",
+  },
+}));
+
+// Usage
+function Alert({ variant, title, children }) {
+  const styles = alertVariants({ variant });
+
+  return (
+    <View style={styles.root}>
+      <AlertIcon style={styles.icon} variant={variant} />
+      <View style={styles.content}>
+        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.description}>{children}</Text>
+      </View>
+    </View>
+  );
+}
+
+<Alert variant="success" title="Success!">
+  Your changes have been saved.
+</Alert>
+
+<Alert variant="error" title="Error">
+  Something went wrong. Please try again.
+</Alert>
+```
+
+## Complex Card Example
+
+```tsx
+const testimonialCardVariants = styled((ctx, t) => ctx({
+  slots: [
+    "root",
+    "quote",
+    "quoteText",
+    "author",
+    "avatar",
+    "authorInfo",
+    "authorName",
+    "authorRole",
+  ],
+  base: {
+    root: {
+      backgroundColor: t.colors.background,
+      borderRadius: t.radii["2xl"],
+      padding: t.spacing["6"],
+      ...t.shadows.lg,
+    },
+    quote: {
+      marginBottom: t.spacing["4"],
+    },
+    quoteText: {
+      fontSize: t.fontSizes.lg,
+      fontWeight: t.fontWeights.medium,
+      color: t.colors.foreground,
+      lineHeight: t.fontSizes.lg * t.lineHeights.relaxed,
+      fontStyle: "italic",
+    },
+    author: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    avatar: {
+      width: 48,
+      height: 48,
+      borderRadius: t.radii.full,
+      marginRight: t.spacing["3"],
+    },
+    authorInfo: {
+      flex: 1,
+    },
+    authorName: {
+      fontSize: t.fontSizes.base,
+      fontWeight: t.fontWeights.semibold,
+      color: t.colors.foreground,
+    },
+    authorRole: {
+      fontSize: t.fontSizes.sm,
+      color: t.colors.muted,
+    },
+  },
+  variants: {
+    featured: {
+      true: {
+        root: {
+          backgroundColor: t.colors.primary,
+          ...t.shadows.xl,
         },
-        name: {
-          fontSize: 14,
-          color: "#ffffff",
+        quoteText: {
+          color: t.colors.background,
         },
-        role: {
-          fontSize: 14,
-          color: "#e5e5e5",
+        authorName: {
+          color: t.colors.background,
+        },
+        authorRole: {
+          color: t.colors.background,
+          opacity: t.opacity["75"],
         },
       },
-      green: {
+    },
+    size: {
+      sm: {
+        root: { padding: t.spacing["4"] },
+        quoteText: { fontSize: t.fontSizes.base },
+        avatar: { width: 40, height: 40 },
+      },
+      lg: {
+        root: { padding: t.spacing["8"] },
+        quoteText: { fontSize: t.fontSizes.xl },
+        avatar: { width: 56, height: 56 },
+      },
+    },
+  },
+  defaultVariants: {
+    featured: false,
+    size: undefined,
+  },
+}));
+
+function TestimonialCard({ quote, author, featured, size }) {
+  const styles = testimonialCardVariants({ featured, size });
+
+  return (
+    <View style={styles.root}>
+      <View style={styles.quote}>
+        <Text style={styles.quoteText}>"{quote}"</Text>
+      </View>
+      <View style={styles.author}>
+        <Image source={{ uri: author.avatar }} style={styles.avatar} />
+        <View style={styles.authorInfo}>
+          <Text style={styles.authorName}>{author.name}</Text>
+          <Text style={styles.authorRole}>{author.role}</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+```
+
+## Input Component with Slots
+
+```tsx
+const inputVariants = styled((ctx, t) => ctx({
+  slots: ["root", "label", "inputWrapper", "input", "icon", "error"],
+  base: {
+    root: {
+      marginBottom: t.spacing["4"],
+    },
+    label: {
+      fontSize: t.fontSizes.sm,
+      fontWeight: t.fontWeights.medium,
+      color: t.colors.foreground,
+      marginBottom: t.spacing["1.5"],
+    },
+    inputWrapper: {
+      flexDirection: "row",
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: t.colors.border,
+      borderRadius: t.radii.lg,
+      backgroundColor: t.colors.background,
+    },
+    input: {
+      flex: 1,
+      paddingHorizontal: t.spacing["3"],
+      paddingVertical: t.spacing["2.5"],
+      fontSize: t.fontSizes.base,
+      color: t.colors.foreground,
+    },
+    icon: {
+      paddingHorizontal: t.spacing["3"],
+      color: t.colors.muted,
+    },
+    error: {
+      fontSize: t.fontSizes.sm,
+      color: t.palette.red500,
+      marginTop: t.spacing["1"],
+    },
+  },
+  variants: {
+    variant: {
+      default: {},
+      filled: {
+        inputWrapper: {
+          backgroundColor: t.colors.muted,
+          borderColor: "transparent",
+        },
+      },
+    },
+    size: {
+      sm: {
+        input: {
+          paddingVertical: t.spacing["2"],
+          fontSize: t.fontSizes.sm,
+        },
+      },
+      lg: {
+        input: {
+          paddingVertical: t.spacing["3"],
+          fontSize: t.fontSizes.lg,
+        },
+      },
+    },
+    hasError: {
+      true: {
+        inputWrapper: {
+          borderColor: t.palette.red500,
+        },
+        label: {
+          color: t.palette.red500,
+        },
+      },
+    },
+    disabled: {
+      true: {
         root: {
-          flexDirection: "row",
-          backgroundColor: "#00ff00",
-          borderRadius: 16,
-          padding: 32,
-          paddingHorizontal: 0,
+          opacity: t.opacity["50"],
         },
-        avatar: {
-          width: 96,
-          height: 96,
-          borderRadius: 48,
-          marginHorizontal: "auto",
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
+        inputWrapper: {
+          backgroundColor: t.colors.muted,
         },
-        wrapper: {
-          flex: 1,
-          paddingTop: 24,
-          paddingHorizontal: 32,
-          textAlign: "center",
-        },
-        description: {
-          fontSize: 16,
-          fontWeight: "500",
-        },
-        info_wrapper: {
-          fontWeight: "500",
-        },
-        name: {
-          fontSize: 14,
-          color: "#ffffff",
-        },
-        role: {
-          fontSize: 14,
-          color: "#e5e5e5",
+      },
+    },
+    focused: {
+      true: {
+        inputWrapper: {
+          borderColor: t.colors.primary,
+          borderWidth: 2,
         },
       },
     },
   },
-});
+  defaultVariants: {
+    variant: "default",
+    hasError: false,
+    disabled: false,
+    focused: false,
+  },
+}));
 
-const { root, avatar, wrapper, description, info_wrapper, name, role } =
-  cardVariants({ variant: "red" });
+function Input({
+  label,
+  error,
+  icon,
+  variant,
+  size,
+  disabled,
+  ...props
+}) {
+  const [focused, setFocused] = useState(false);
+  const styles = inputVariants({
+    variant,
+    size,
+    hasError: !!error,
+    disabled,
+    focused,
+  });
 
-return (
-  <View style={root}>
-    <Image style={avatar} src={require("/intro-avatar.png")} />
-    <View style={wrapper}>
-      <Text style={description}>
-        “Tailwind variants allows you to reduce repeated code in your project
-        and make it more readable. They fixed the headache of building a design
-        system with TailwindCSS.”
-      </Text>
-      <View style={infoWrapper}>
-        <View style={name}>Zoey Lang</View>
-        <View style={role}>Full-stack developer, NextUI</View>
+  return (
+    <View style={styles.root}>
+      {label && <Text style={styles.label}>{label}</Text>}
+      <View style={styles.inputWrapper}>
+        {icon && <View style={styles.icon}>{icon}</View>}
+        <TextInput
+          style={styles.input}
+          editable={!disabled}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          {...props}
+        />
       </View>
+      {error && <Text style={styles.error}>{error}</Text>}
     </View>
-  </View>
-);
+  );
+}
+
+// Usage
+<Input
+  label="Email"
+  placeholder="Enter your email"
+  icon={<MailIcon />}
+/>
+
+<Input
+  label="Password"
+  error="Password must be at least 8 characters"
+  secureTextEntry
+/>
+```
+
+## Compound Variants with Slots
+
+Apply styles to multiple slots based on variant combinations.
+
+```tsx
+const chipVariants = styled((ctx, t) => ctx({
+  slots: ["root", "text", "icon", "closeButton"],
+  base: {
+    root: {
+      flexDirection: "row",
+      alignItems: "center",
+      borderRadius: t.radii.full,
+      paddingHorizontal: t.spacing["3"],
+      paddingVertical: t.spacing["1"],
+    },
+    text: {
+      fontSize: t.fontSizes.sm,
+      fontWeight: t.fontWeights.medium,
+    },
+    icon: {
+      marginRight: t.spacing["1"],
+    },
+    closeButton: {
+      marginLeft: t.spacing["1"],
+      padding: t.spacing["0.5"],
+      borderRadius: t.radii.full,
+    },
+  },
+  variants: {
+    variant: {
+      solid: {
+        root: { backgroundColor: t.colors.primary },
+        text: { color: t.colors.background },
+        icon: { color: t.colors.background },
+        closeButton: { backgroundColor: "rgba(255,255,255,0.2)" },
+      },
+      outline: {
+        root: {
+          backgroundColor: "transparent",
+          borderWidth: 1,
+          borderColor: t.colors.primary,
+        },
+        text: { color: t.colors.primary },
+        icon: { color: t.colors.primary },
+      },
+      soft: {
+        root: { backgroundColor: t.palette.blue100 },
+        text: { color: t.palette.blue700 },
+        icon: { color: t.palette.blue500 },
+      },
+    },
+    size: {
+      sm: {
+        root: {
+          paddingHorizontal: t.spacing["2"],
+          paddingVertical: t.spacing["0.5"],
+        },
+        text: { fontSize: t.fontSizes.xs },
+      },
+      lg: {
+        root: {
+          paddingHorizontal: t.spacing["4"],
+          paddingVertical: t.spacing["1.5"],
+        },
+        text: { fontSize: t.fontSizes.base },
+      },
+    },
+    selected: {
+      true: {},
+      false: {},
+    },
+  },
+  compoundVariants: [
+    {
+      variant: "outline",
+      selected: true,
+      css: {
+        root: { backgroundColor: t.colors.primary },
+        text: { color: t.colors.background },
+        icon: { color: t.colors.background },
+      },
+    },
+    {
+      variant: "soft",
+      selected: true,
+      css: {
+        root: { backgroundColor: t.palette.blue500 },
+        text: { color: t.colors.background },
+        icon: { color: t.colors.background },
+      },
+    },
+  ],
+  defaultVariants: {
+    variant: "solid",
+    selected: false,
+  },
+}));
+```
+
+## Tips
+
+1. **Name slots semantically** - Use names like `root`, `content`, `header`, `footer` that describe the part's role.
+
+2. **Keep slots focused** - Each slot should represent a distinct visual element.
+
+3. **Use base for common styles** - Put shared styles in `base`, use variants for variations.
+
+4. **Leverage TypeScript** - Slots are fully typed, providing autocomplete for slot names.
+
+```tsx
+// TypeScript knows all available slots
+const { root, header, content, footer } = myVariants();
+// Type error if you try to access a non-existent slot
+const { nonExistent } = myVariants(); // ❌ Error
 ```

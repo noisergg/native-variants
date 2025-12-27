@@ -1,0 +1,427 @@
+---
+title: Theme Provider
+description: Add dark/light mode support to your React Native app with ThemeProvider.
+---
+
+## Overview
+
+The `ThemeProvider` component provides a React Context for managing dark/light themes in your application. It supports:
+
+- 🌗 Light, dark, and system mode
+- 📱 Automatic system preference detection
+- 💾 Optional persistence with custom storage
+- ⚡ Optimized re-renders with memoization
+
+## Setup
+
+### 1. Create your theme with `createNVA`
+
+```tsx
+// lib/nva.ts
+import { createNVA } from "native-variants";
+
+export const { styled, theme, colorScheme } = createNVA({
+  theme: {
+    colors: {
+      default: {
+        primary: "#3b82f6",
+        background: "#ffffff",
+        foreground: "#0a0a0a",
+        card: "#f4f4f5",
+        border: "#e4e4e7",
+      },
+      dark: {
+        primary: "#60a5fa",
+        background: "#0a0a0a",
+        foreground: "#fafafa",
+        card: "#18181b",
+        border: "#27272a",
+      },
+    },
+  },
+});
+```
+
+### 2. Wrap your app with `ThemeProvider`
+
+```tsx
+// App.tsx
+import { ThemeProvider } from "native-variants";
+import { colorScheme } from "./lib/nva";
+
+export default function App() {
+  return (
+    <ThemeProvider colors={colorScheme} defaultMode="system">
+      <RootLayout />
+    </ThemeProvider>
+  );
+}
+```
+
+## ThemeProvider Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `colors` | `ColorSchemeConfig<T>` | **required** | Color schemes from `createNVA` |
+| `defaultMode` | `"light" \| "dark" \| "system"` | `"system"` | Initial theme mode |
+| `onGetStorage` | `() => Promise<ThemeMode \| null>` | - | Load persisted preference |
+| `onSetStorage` | `(mode: ThemeMode) => Promise<void>` | - | Save preference |
+
+## Using Theme Hooks
+
+### `useTheme`
+
+The main hook for accessing theme context.
+
+```tsx
+import { useTheme } from "native-variants";
+
+function MyComponent() {
+  const { 
+    colors,       // Current theme colors (light or dark)
+    colorScheme,  // "light" | "dark"
+    mode,         // "light" | "dark" | "system"
+    isDark,       // boolean
+    setMode,      // (mode: ThemeMode) => void
+    toggle,       // () => void - toggles between light/dark
+  } = useTheme();
+
+  return (
+    <View style={{ backgroundColor: colors.background }}>
+      <Text style={{ color: colors.foreground }}>
+        Current theme: {isDark ? "Dark" : "Light"}
+      </Text>
+      <Button onPress={toggle} title="Toggle Theme" />
+      <Button onPress={() => setMode("system")} title="Use System" />
+    </View>
+  );
+}
+```
+
+### `useThemeColors`
+
+Convenience hook that returns only the colors.
+
+```tsx
+import { useThemeColors } from "native-variants";
+
+function Card() {
+  const colors = useThemeColors();
+
+  return (
+    <View style={{ 
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+    }}>
+      <Text style={{ color: colors.foreground }}>Card Content</Text>
+    </View>
+  );
+}
+```
+
+### `useIsDark`
+
+Quick check for dark mode.
+
+```tsx
+import { useIsDark } from "native-variants";
+
+function Logo() {
+  const isDark = useIsDark();
+
+  return (
+    <Image source={isDark ? darkLogo : lightLogo} />
+  );
+}
+```
+
+### `useColorScheme`
+
+Get the current color scheme ("light" or "dark").
+
+```tsx
+import { useColorScheme } from "native-variants";
+import { StatusBar } from "react-native";
+
+function MyStatusBar() {
+  const colorScheme = useColorScheme();
+
+  return (
+    <StatusBar 
+      barStyle={colorScheme === "dark" ? "light-content" : "dark-content"} 
+    />
+  );
+}
+```
+
+## Theme Modes
+
+| Mode | Behavior |
+|------|----------|
+| `"light"` | Always use light theme |
+| `"dark"` | Always use dark theme |
+| `"system"` | Follow device system preference |
+
+```tsx
+function ThemeSettings() {
+  const { mode, setMode } = useTheme();
+
+  return (
+    <View>
+      <Button 
+        onPress={() => setMode("light")} 
+        title="Light"
+        variant={mode === "light" ? "default" : "outline"}
+      />
+      <Button 
+        onPress={() => setMode("dark")} 
+        title="Dark"
+        variant={mode === "dark" ? "default" : "outline"}
+      />
+      <Button 
+        onPress={() => setMode("system")} 
+        title="System"
+        variant={mode === "system" ? "default" : "outline"}
+      />
+    </View>
+  );
+}
+```
+
+## Persistence
+
+Save the user's theme preference using AsyncStorage or any storage solution.
+
+### With AsyncStorage
+
+```tsx
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ThemeProvider, ThemeMode } from "native-variants";
+
+const THEME_STORAGE_KEY = "user-theme-preference";
+
+export default function App() {
+  return (
+    <ThemeProvider
+      colors={colorScheme}
+      defaultMode="system"
+      onGetStorage={async () => {
+        try {
+          const stored = await AsyncStorage.getItem(THEME_STORAGE_KEY);
+          return stored as ThemeMode | null;
+        } catch {
+          return null;
+        }
+      }}
+      onSetStorage={async (mode) => {
+        try {
+          await AsyncStorage.setItem(THEME_STORAGE_KEY, mode);
+        } catch {
+          // Handle error
+        }
+      }}
+    >
+      <RootLayout />
+    </ThemeProvider>
+  );
+}
+```
+
+### With MMKV (Faster)
+
+```tsx
+import { MMKV } from "react-native-mmkv";
+import { ThemeProvider, ThemeMode } from "native-variants";
+
+const storage = new MMKV();
+const THEME_KEY = "theme-mode";
+
+export default function App() {
+  return (
+    <ThemeProvider
+      colors={colorScheme}
+      defaultMode="system"
+      onGetStorage={async () => {
+        return storage.getString(THEME_KEY) as ThemeMode | null;
+      }}
+      onSetStorage={async (mode) => {
+        storage.set(THEME_KEY, mode);
+      }}
+    >
+      <RootLayout />
+    </ThemeProvider>
+  );
+}
+```
+
+## Creating Themed Styles
+
+Use `createThemedStyles` to create style factories that automatically use the current theme colors.
+
+```tsx
+import { createThemedStyles } from "native-variants";
+import type { ViewStyle, TextStyle } from "react-native";
+
+// Define your colors type
+type MyColors = {
+  background: string;
+  foreground: string;
+  card: string;
+  cardForeground: string;
+  border: string;
+};
+
+// Create a themed style hook
+const useCardStyles = createThemedStyles<MyColors, {
+  container: ViewStyle;
+  title: TextStyle;
+  content: TextStyle;
+}>((colors) => ({
+  container: {
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+  },
+  title: {
+    color: colors.cardForeground,
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  content: {
+    color: colors.cardForeground,
+    fontSize: 14,
+    opacity: 0.8,
+  },
+}));
+
+// Use in component
+function Card({ title, children }) {
+  const styles = useCardStyles();
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.content}>{children}</Text>
+    </View>
+  );
+}
+```
+
+## Complete Example
+
+```tsx
+// lib/nva.ts
+import { createNVA } from "native-variants";
+
+export const { styled, theme, colorScheme } = createNVA({
+  theme: {
+    colors: {
+      default: {
+        primary: "#3b82f6",
+        background: "#ffffff",
+        foreground: "#0a0a0a",
+        card: "#f4f4f5",
+        border: "#e4e4e7",
+        muted: "#71717a",
+      },
+      dark: {
+        primary: "#60a5fa",
+        background: "#0a0a0a",
+        foreground: "#fafafa",
+        card: "#18181b",
+        border: "#27272a",
+        muted: "#a1a1aa",
+      },
+    },
+  },
+});
+
+// App.tsx
+import { ThemeProvider } from "native-variants";
+import { colorScheme } from "./lib/nva";
+import { StatusBar, SafeAreaView } from "react-native";
+
+export default function App() {
+  return (
+    <ThemeProvider colors={colorScheme} defaultMode="system">
+      <AppContent />
+    </ThemeProvider>
+  );
+}
+
+function AppContent() {
+  const { colors, colorScheme: scheme, isDark, toggle } = useTheme();
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+      
+      <View style={{ padding: 20 }}>
+        <Text style={{ 
+          color: colors.foreground,
+          fontSize: 24,
+          fontWeight: "bold",
+          marginBottom: 20,
+        }}>
+          Theme: {scheme}
+        </Text>
+
+        <TouchableOpacity
+          onPress={toggle}
+          style={{
+            backgroundColor: colors.primary,
+            padding: 16,
+            borderRadius: 8,
+            alignItems: "center",
+          }}
+        >
+          <Text style={{ color: colors.background, fontWeight: "600" }}>
+            Toggle Theme
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
+```
+
+## TypeScript
+
+For full TypeScript support, define your colors type:
+
+```tsx
+// lib/nva.ts
+import { createNVA } from "native-variants";
+
+const colors = {
+  default: {
+    primary: "#3b82f6",
+    background: "#ffffff",
+    foreground: "#0a0a0a",
+  },
+  dark: {
+    primary: "#60a5fa",
+    background: "#0a0a0a",
+    foreground: "#fafafa",
+  },
+} as const;
+
+export type AppColors = typeof colors.default;
+
+export const { styled, theme, colorScheme } = createNVA({
+  theme: { colors },
+});
+
+// components/MyComponent.tsx
+import { useTheme } from "native-variants";
+import type { AppColors } from "@/lib/nva";
+
+function MyComponent() {
+  const { colors } = useTheme<AppColors>();
+  // colors.primary is typed and autocompletes!
+}
+```
+

@@ -22,6 +22,14 @@ export const ROUTES: EachRoute[] = [
         href: "/installation",
       },
       {
+        title: "Theme",
+        href: "/theme",
+      },
+      {
+        title: "Theme Provider",
+        href: "/theme-provider",
+      },
+      {
         title: "Variants",
         href: "/variants",
       },
@@ -30,7 +38,11 @@ export const ROUTES: EachRoute[] = [
         href: "/slots",
       },
       {
-        title: "Typescript",
+        title: "Utilities",
+        href: "/utilities",
+      },
+      {
+        title: "TypeScript",
         href: "/typescript",
       },
     ],

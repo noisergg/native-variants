@@ -1,29 +1,24 @@
 ---
 title: Installation
-description: Installation guide for our application.
+description: Get started with Native Variants in your React Native project.
 ---
 
-## Getting started
+## Prerequisites
 
-**Native Variants** combines the power of React Native's `StyleSheet` with a first-class variant API for dynamic styling.
-
-## Setup React Native
-
-**Native Variants** requires you to have a React Native project set up. If you haven't set up React Native yet, you can follow the official [React Native Getting Started guide](https://reactnative.dev/docs/getting-started).
+**Native Variants** requires a React Native project. If you haven't set up React Native yet, follow the official [React Native Getting Started guide](https://reactnative.dev/docs/getting-started).
 
 ## Installation
-
-To use **Native Variants** in your React Native project, install it as a dependency:
 
 <Tabs defaultValue="npm" className="pt-5 pb-1">
   <TabsList>
     <TabsTrigger value="npm">npm</TabsTrigger>
     <TabsTrigger value="yarn">yarn</TabsTrigger>
     <TabsTrigger value="pnpm">pnpm</TabsTrigger>
+    <TabsTrigger value="bun">bun</TabsTrigger>
   </TabsList>
   <TabsContent value="npm">
   ```bash 
-  npm i native-variants 
+  npm install native-variants 
   ```
   </TabsContent>
   <TabsContent value="yarn">
@@ -33,82 +28,270 @@ To use **Native Variants** in your React Native project, install it as a depende
   </TabsContent>
   <TabsContent value="pnpm">
   ```bash 
-  pnpm i native-variants 
+  pnpm add native-variants 
+  ```
+  </TabsContent>
+  <TabsContent value="bun">
+  ```bash 
+  bun add native-variants 
   ```
   </TabsContent>
 </Tabs>
 
-## Usage
+## Setup
+
+### 1. Create your theme file
+
+Create a `lib/nva.ts` file to configure your theme and export the styled function.
 
 ```tsx
-import { nv, type VariantProps } from "native-variants";
-import React from "react";
-import { Text, TouchableOpacity } from "react-native";
+// lib/nva.ts
+import { createNVA } from "native-variants";
 
-const buttonVariants = nv({
+export const { styled, theme, colorScheme } = createNVA({
+  theme: {
+    colors: {
+      // Light theme colors
+      default: {
+        primary: "#3b82f6",
+        secondary: "#8b5cf6",
+        background: "#ffffff",
+        foreground: "#0a0a0a",
+        card: "#f4f4f5",
+        cardForeground: "#18181b",
+        muted: "#f4f4f5",
+        mutedForeground: "#71717a",
+        border: "#e4e4e7",
+        input: "#e4e4e7",
+        ring: "#3b82f6",
+        destructive: "#ef4444",
+        success: "#22c55e",
+      },
+      // Dark theme colors (must have same keys as default)
+      dark: {
+        primary: "#60a5fa",
+        secondary: "#a78bfa",
+        background: "#0a0a0a",
+        foreground: "#fafafa",
+        card: "#18181b",
+        cardForeground: "#fafafa",
+        muted: "#27272a",
+        mutedForeground: "#a1a1aa",
+        border: "#27272a",
+        input: "#27272a",
+        ring: "#60a5fa",
+        destructive: "#f87171",
+        success: "#4ade80",
+      },
+    },
+  },
+});
+```
+
+### 2. Setup ThemeProvider
+
+Wrap your app with `ThemeProvider` to enable dark/light mode support.
+
+```tsx
+// App.tsx
+import { ThemeProvider } from "native-variants";
+import { colorScheme } from "./lib/nva";
+
+export default function App() {
+  return (
+    <ThemeProvider colors={colorScheme} defaultMode="system">
+      <RootLayout />
+    </ThemeProvider>
+  );
+}
+```
+
+### 3. Create your first styled component
+
+```tsx
+// components/Button.tsx
+import { styled, theme } from "@/lib/nva";
+import { Text, TouchableOpacity } from "react-native";
+import type { VariantProps } from "native-variants";
+
+const buttonVariants = styled((ctx, t) => ctx({
   slots: ["root", "text"],
   base: {
     root: {
-      paddingHorizontal: 16,
-      paddingVertical: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: t.radii.lg,
+      paddingVertical: t.spacing["3"],
+      paddingHorizontal: t.spacing["4"],
     },
     text: {
-      color: "#ffffff",
+      fontSize: t.fontSizes.base,
+      fontWeight: t.fontWeights.semibold,
       textAlign: "center",
     },
   },
   variants: {
     variant: {
-      solid: {
-        root: {
-          backgroundColor: "#ff0006",
-        },
-        text: {
-          color: "#ffffff",
-        },
+      default: {
+        root: { backgroundColor: t.colors.primary },
+        text: { color: t.colors.background },
       },
-      ghost: {
+      secondary: {
+        root: { backgroundColor: t.colors.secondary },
+        text: { color: t.colors.background },
+      },
+      outline: {
         root: {
           backgroundColor: "transparent",
+          borderWidth: 1,
+          borderColor: t.colors.primary,
         },
-        text: {
-          color: "#ff0006",
+        text: { color: t.colors.primary },
+      },
+      ghost: {
+        root: { backgroundColor: "transparent" },
+        text: { color: t.colors.primary },
+      },
+      destructive: {
+        root: { backgroundColor: t.colors.destructive },
+        text: { color: t.colors.background },
+      },
+    },
+    size: {
+      sm: {
+        root: { 
+          paddingVertical: t.spacing["2"],
+          paddingHorizontal: t.spacing["3"],
         },
+        text: { fontSize: t.fontSizes.sm },
+      },
+      default: {
+        root: {
+          paddingVertical: t.spacing["3"],
+          paddingHorizontal: t.spacing["4"],
+        },
+      },
+      lg: {
+        root: {
+          paddingVertical: t.spacing["4"],
+          paddingHorizontal: t.spacing["6"],
+        },
+        text: { fontSize: t.fontSizes.lg },
+      },
+    },
+    disabled: {
+      true: {
+        root: { 
+          opacity: t.opacity["50"],
+          pointerEvents: "none",
+        },
+      },
+      false: {
+        root: { opacity: t.opacity["100"] },
       },
     },
   },
   defaultVariants: {
-    variant: "solid",
+    variant: "default",
+    size: "default",
+    disabled: false,
   },
-  compoundVariants: [
-    {
-      variant: "ghost",
-      css: {
-        root: {
-          borderWidth: 1,
-          borderColor: "#fff006",
-        },
-      },
-    },
-  ],
-});
+}));
 
-export interface ButtonProps
-  extends React.ComponentPropsWithoutRef<typeof TouchableOpacity>,
-    VariantProps<typeof buttonVariants> {}
+export type ButtonProps = React.ComponentPropsWithoutRef<typeof TouchableOpacity> &
+  VariantProps<typeof buttonVariants> & {
+    children: React.ReactNode;
+  };
 
-export const Button = React.forwardRef<
-  React.ComponentRef<typeof TouchableOpacity>,
-  ButtonProps
->(({ children, variant, ...props }, ref) => {
-  const { root, text } = buttonVariants({ variant });
+export function Button({ 
+  children, 
+  variant, 
+  size, 
+  disabled,
+  style,
+  ...props 
+}: ButtonProps) {
+  const styles = buttonVariants({ variant, size, disabled });
 
   return (
-    <TouchableOpacity {...props} ref={ref} style={root}>
-      <Text style={text}>{children}</Text>
+    <TouchableOpacity 
+      style={[styles.root, style]} 
+      disabled={disabled} 
+      {...props}
+    >
+      <Text style={styles.text}>{children}</Text>
     </TouchableOpacity>
   );
-});
-
-Button.displayName = "Button";
+}
 ```
+
+### 4. Use the component
+
+```tsx
+import { Button } from "@/components/Button";
+
+function MyScreen() {
+  return (
+    <View>
+      <Button variant="default">Primary Button</Button>
+      <Button variant="outline" size="lg">Large Outline</Button>
+      <Button variant="destructive" disabled>Disabled</Button>
+    </View>
+  );
+}
+```
+
+## Available Tokens
+
+When you create a theme with `createNVA`, you get access to all Tailwind CSS design tokens:
+
+| Token | Description | Example |
+|-------|-------------|---------|
+| `colors` | Your semantic colors | `t.colors.primary` |
+| `palette` | Full Tailwind color palette | `t.palette.blue500` |
+| `spacing` | Spacing scale (0-96) | `t.spacing["4"]` → 16 |
+| `fontSizes` | Font sizes (xs-9xl) | `t.fontSizes.lg` → 18 |
+| `radii` | Border radius | `t.radii.lg` → 8 |
+| `shadows` | Shadow presets | `t.shadows.md` |
+| `zIndex` | Z-index scale | `t.zIndex["50"]` → 50 |
+| `opacity` | Opacity scale (0-100) | `t.opacity["50"]` → 0.5 |
+| `fontWeights` | Font weights | `t.fontWeights.bold` → "700" |
+| `lineHeights` | Line heights | `t.lineHeights.normal` → 1.5 |
+| `letterSpacing` | Letter spacing | `t.letterSpacing.tight` → -0.4 |
+| `borderWidths` | Border widths | `t.borderWidths.DEFAULT` → 1 |
+| `durations` | Animation durations | `t.durations["300"]` → 300 |
+
+## Optional: Theme Persistence
+
+To persist the user's theme preference, use the storage callbacks:
+
+```tsx
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ThemeProvider, ThemeMode } from "native-variants";
+
+export default function App() {
+  return (
+    <ThemeProvider
+      colors={colorScheme}
+      defaultMode="system"
+      onGetStorage={async () => {
+        const mode = await AsyncStorage.getItem("theme-mode");
+        return mode as ThemeMode | null;
+      }}
+      onSetStorage={async (mode) => {
+        await AsyncStorage.setItem("theme-mode", mode);
+      }}
+    >
+      <RootLayout />
+    </ThemeProvider>
+  );
+}
+```
+
+## Next Steps
+
+- Learn about [Variants](/docs/getting-started/variants) to create flexible components
+- Explore [Slots](/docs/getting-started/slots) for multi-part components
+- Set up [Theme](/docs/getting-started/theme) with design tokens
+- Add [Dark Mode](/docs/getting-started/theme-provider) support
+- Check out [Utilities](/docs/getting-started/utilities) for style helpers

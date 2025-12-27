@@ -1,0 +1,378 @@
+---
+title: Theme
+description: Configure design tokens and create a themed styling instance with createNVA.
+---
+
+## Overview
+
+The `createNVA` function creates a themed instance of Native Variants with access to your colors and all Tailwind CSS design tokens.
+
+```tsx
+import { createNVA } from "native-variants";
+
+const { styled, theme, colorScheme } = createNVA({
+  theme: {
+    colors: {
+      default: { /* light colors */ },
+      dark: { /* dark colors */ },
+    },
+  },
+});
+```
+
+## Creating Your Theme
+
+### Basic Setup
+
+```tsx
+const { styled, theme, colorScheme } = createNVA({
+  theme: {
+    colors: {
+      default: {
+        primary: "#3b82f6",
+        secondary: "#8b5cf6",
+        background: "#ffffff",
+        foreground: "#0a0a0a",
+        muted: "#f4f4f5",
+        border: "#e4e4e7",
+      },
+      dark: {
+        primary: "#60a5fa",
+        secondary: "#a78bfa",
+        background: "#0a0a0a",
+        foreground: "#fafafa",
+        muted: "#27272a",
+        border: "#27272a",
+      },
+    },
+  },
+});
+```
+
+### Type-Safe Colors
+
+TypeScript ensures that `dark` and `default` color schemes have exactly the same keys. If you add a color to one scheme but forget the other, TypeScript will show an error:
+
+```tsx
+// ❌ TypeScript Error: 'dark' is missing 'accent' key
+const { styled, theme } = createNVA({
+  theme: {
+    colors: {
+      default: {
+        primary: "#3b82f6",
+        accent: "#f97316", // Added here
+      },
+      dark: {
+        primary: "#60a5fa",
+        // Missing 'accent' - TypeScript will error!
+      },
+    },
+  },
+});
+```
+
+## Theme Object
+
+The `theme` object returned by `createNVA` contains:
+
+### Your Semantic Colors
+
+```tsx
+theme.colors.primary     // "#3b82f6"
+theme.colors.background  // "#ffffff"
+theme.colors.foreground  // "#0a0a0a"
+```
+
+### Tailwind Color Palette
+
+Full Tailwind CSS color palette with all shades:
+
+```tsx
+theme.palette.slate50    // "#f8fafc"
+theme.palette.slate500   // "#64748b"
+theme.palette.slate900   // "#0f172a"
+
+theme.palette.blue500    // "#3b82f6"
+theme.palette.red500     // "#ef4444"
+theme.palette.green500   // "#22c55e"
+theme.palette.amber500   // "#f59e0b"
+
+theme.palette.white      // "#FFFFFF"
+theme.palette.black      // "#000000"
+theme.palette.transparent // "transparent"
+```
+
+### Spacing Scale
+
+Tailwind spacing scale (in pixels):
+
+```tsx
+theme.spacing["0"]       // 0
+theme.spacing.px         // 1
+theme.spacing["0.5"]     // 2
+theme.spacing["1"]       // 4
+theme.spacing["2"]       // 8
+theme.spacing["3"]       // 12
+theme.spacing["4"]       // 16
+theme.spacing["6"]       // 24
+theme.spacing["8"]       // 32
+theme.spacing["12"]      // 48
+theme.spacing["16"]      // 64
+theme.spacing["24"]      // 96
+// ... up to 96 (384px)
+```
+
+### Font Sizes
+
+```tsx
+theme.fontSizes.xs       // 12
+theme.fontSizes.sm       // 14
+theme.fontSizes.base     // 16
+theme.fontSizes.lg       // 18
+theme.fontSizes.xl       // 20
+theme.fontSizes["2xl"]   // 24
+theme.fontSizes["3xl"]   // 30
+theme.fontSizes["4xl"]   // 36
+// ... up to 9xl (128)
+```
+
+### Border Radius
+
+```tsx
+theme.radii.none         // 0
+theme.radii.sm           // 4
+theme.radii.DEFAULT      // 6
+theme.radii.md           // 6
+theme.radii.lg           // 8
+theme.radii.xl           // 12
+theme.radii["2xl"]       // 16
+theme.radii["3xl"]       // 24
+theme.radii.full         // 9999
+```
+
+### Shadows
+
+Platform-aware shadow objects for iOS and Android:
+
+```tsx
+theme.shadows.none       // { shadowOpacity: 0, elevation: 0 }
+theme.shadows.sm         // { shadowColor: "#000", shadowOffset: {...}, elevation: 1 }
+theme.shadows.DEFAULT    // elevation: 2
+theme.shadows.md         // elevation: 4
+theme.shadows.lg         // elevation: 6
+theme.shadows.xl         // elevation: 8
+theme.shadows["2xl"]     // elevation: 12
+
+// Usage
+<View style={{ ...theme.shadows.lg }} />
+```
+
+### Font Weights
+
+```tsx
+theme.fontWeights.thin       // "100"
+theme.fontWeights.light      // "300"
+theme.fontWeights.normal     // "400"
+theme.fontWeights.medium     // "500"
+theme.fontWeights.semibold   // "600"
+theme.fontWeights.bold       // "700"
+theme.fontWeights.extrabold  // "800"
+theme.fontWeights.black      // "900"
+```
+
+### Opacity Scale
+
+```tsx
+theme.opacity["0"]       // 0
+theme.opacity["5"]       // 0.05
+theme.opacity["10"]      // 0.1
+theme.opacity["25"]      // 0.25
+theme.opacity["50"]      // 0.5
+theme.opacity["75"]      // 0.75
+theme.opacity["100"]     // 1
+```
+
+### Z-Index Scale
+
+```tsx
+theme.zIndex["0"]        // 0
+theme.zIndex["10"]       // 10
+theme.zIndex["20"]       // 20
+theme.zIndex["30"]       // 30
+theme.zIndex["40"]       // 40
+theme.zIndex["50"]       // 50
+```
+
+### Line Heights
+
+```tsx
+theme.lineHeights.none     // 1
+theme.lineHeights.tight    // 1.25
+theme.lineHeights.snug     // 1.375
+theme.lineHeights.normal   // 1.5
+theme.lineHeights.relaxed  // 1.625
+theme.lineHeights.loose    // 2
+// Also numeric: "3" to "10"
+```
+
+### Letter Spacing
+
+```tsx
+theme.letterSpacing.tighter  // -0.8
+theme.letterSpacing.tight    // -0.4
+theme.letterSpacing.normal   // 0
+theme.letterSpacing.wide     // 0.4
+theme.letterSpacing.wider    // 0.8
+theme.letterSpacing.widest   // 1.6
+```
+
+### Border Widths
+
+```tsx
+theme.borderWidths["0"]      // 0
+theme.borderWidths.DEFAULT   // 1
+theme.borderWidths["2"]      // 2
+theme.borderWidths["4"]      // 4
+theme.borderWidths["8"]      // 8
+```
+
+### Animation Durations
+
+```tsx
+theme.durations["0"]     // 0
+theme.durations["75"]    // 75
+theme.durations["100"]   // 100
+theme.durations["150"]   // 150
+theme.durations["200"]   // 200
+theme.durations["300"]   // 300
+theme.durations["500"]   // 500
+theme.durations["700"]   // 700
+theme.durations["1000"]  // 1000
+```
+
+## Using Theme in Styled
+
+The `styled` function provides access to the theme via a factory function:
+
+```tsx
+const cardVariants = styled((ctx, t) => ctx({
+  slots: ["root", "title", "content"],
+  base: {
+    root: {
+      backgroundColor: t.colors.card,
+      borderRadius: t.radii.lg,
+      padding: t.spacing["4"],
+      ...t.shadows.md,
+    },
+    title: {
+      fontSize: t.fontSizes.lg,
+      fontWeight: t.fontWeights.semibold,
+      color: t.colors.cardForeground,
+      marginBottom: t.spacing["2"],
+    },
+    content: {
+      fontSize: t.fontSizes.base,
+      color: t.colors.mutedForeground,
+      lineHeight: t.fontSizes.base * t.lineHeights.relaxed,
+    },
+  },
+  variants: {
+    elevated: {
+      true: {
+        root: { ...t.shadows.xl },
+      },
+      false: {
+        root: { ...t.shadows.sm },
+      },
+    },
+  },
+  defaultVariants: {
+    elevated: false,
+  },
+}));
+```
+
+## Using Theme Outside Styled
+
+You can use the `theme` object directly in your components:
+
+```tsx
+import { theme } from "@/lib/nva";
+
+function MyComponent() {
+  return (
+    <View style={{
+      padding: theme.spacing["4"],
+      backgroundColor: theme.colors.background,
+      borderRadius: theme.radii.lg,
+    }}>
+      <Text style={{
+        fontSize: theme.fontSizes.lg,
+        color: theme.colors.foreground,
+      }}>
+        Hello World
+      </Text>
+    </View>
+  );
+}
+```
+
+<Note>
+  The `theme` object uses colors from the `default` (light) scheme.
+  For dark mode support, use the `ThemeProvider` and `useTheme` hook.
+</Note>
+
+## Extending Default Tokens
+
+You can import and extend the default Tailwind tokens:
+
+```tsx
+import { 
+  extendTheme,
+  tailwindColors,
+  tailwindSpacing,
+} from "native-variants";
+
+// Use individual tokens
+const customSpacing = {
+  ...tailwindSpacing,
+  "18": 72,
+  "22": 88,
+};
+
+// Or use extendTheme helper
+const myTheme = extendTheme({
+  colors: {
+    brand: "#ff6b00",
+  },
+  spacing: {
+    "18": 72,
+  },
+});
+```
+
+## Color Scheme Output
+
+The `colorScheme` object contains both color schemes and should be passed to `ThemeProvider`:
+
+```tsx
+const { colorScheme } = createNVA({
+  theme: {
+    colors: {
+      default: { primary: "#3b82f6" },
+      dark: { primary: "#60a5fa" },
+    },
+  },
+});
+
+// colorScheme = {
+//   default: { primary: "#3b82f6" },
+//   dark: { primary: "#60a5fa" },
+// }
+
+// Pass to ThemeProvider for dark mode support
+<ThemeProvider colors={colorScheme}>
+  <App />
+</ThemeProvider>
+```
+
